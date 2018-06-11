@@ -200,3 +200,5 @@ export default class Index extends Component {
 
 - `mapStateToProps`，函数类型，接受最新的 `state` 作为参数，用于将 `state` 映射到组件的 `props` 
 - `mapDispatchToProps`，函数类型，接收 `dispatch()` 方法并返回期望注入到展示组件的 `props` 中的回调方法
+
+具体请参见示例 [taro-redux-sample](https://github.com/NervJS/taro-redux-sample)
