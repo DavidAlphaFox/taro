@@ -1,3 +1,5 @@
+import { findDOM } from '../utils'
+
 /**
  * WXML节点信息API
  * @return {Object} SelectorQuery 对象实例
@@ -6,15 +8,39 @@ function queryBat (queue, cb) {
   const res = []
 
   queue.forEach(item => {
-    const { selector, single, fields } = item
-    let el = null
+    const { selector, single, fields, component } = item
+    // selector 的容器节点
+    /* eslint-disable */
+    const container = (
+      component !== null ?
+        (findDOM(component) || document) :
+        document
+    )
+    /* eslint-enable */
+
+    // 特殊处理 ---- 选自己
+    let selectSelf = false
+    if (container !== document) {
+      const $nodeList = container.parentNode.querySelectorAll(selector)
+      for (let i = 0, len = $nodeList.length; i < len; ++i) {
+        if (container === $nodeList[i]) {
+          selectSelf = true
+          break
+        }
+      }
+    }
 
     if (single) {
-      el = document.querySelector(selector)
+      const el = selectSelf === true ? container : container.querySelector(selector)
       res.push(filter(fields, el, selector))
     } else {
-      el = Array.from(document.querySelectorAll(selector))
-      res.push(el.map(dom => filter(fields, dom)))
+      const $children = container.querySelectorAll(selector)
+      const children = []
+      selectSelf === true && children.push(container)
+      for (let i = 0, len = $children.length; i < len; ++i) {
+        children.push($children[i])
+      }
+      res.push(children.map(dom => filter(fields, dom)))
     }
   })
   cb(res)
@@ -23,7 +49,7 @@ function queryBat (queue, cb) {
 function filter (fields, dom, selector) {
   if (!dom) return null
 
-  const { id, dataset, rect, size, scrollOffset, properties = [] } = fields
+  const { id, dataset, rect, size, scrollOffset, properties = [], computedStyle = [] } = fields
   const { left, right, top, bottom, width, height } = dom.getBoundingClientRect()
   const isViewport = selector === 'html'
   const res = {}
@@ -37,7 +63,10 @@ function filter (fields, dom, selector) {
       res.top = top
       res.bottom = bottom
     } else {
-      res.left = res.right = res.top = res.bottom = 0
+      res.left = 0
+      res.right = 0
+      res.top = 0
+      res.bottom = 0
     }
   }
   if (size) {
@@ -55,7 +84,15 @@ function filter (fields, dom, selector) {
   }
   if (properties.length) {
     properties.forEach(prop => {
-      res[prop] = dom.getAttribute(prop)
+      const attr = dom.getAttribute(prop)
+      if (attr) res[prop] = attr
+    })
+  }
+  if (computedStyle.length) {
+    const styles = window.getComputedStyle(dom)
+    computedStyle.forEach(key => {
+      const value = styles.getPropertyValue(key) || styles[key]
+      if (value) res[key] = value
     })
   }
 
@@ -78,13 +115,13 @@ class Query {
 
   select (selector) {
     // 小程序里跨自定义组件的后代选择器 '>>>' 在 h5 替换为普通后代选择器 '>'
-    selector = selector.replace('>>>', '>')
+    if (typeof selector === 'string') selector = selector.replace('>>>', '>')
     return new NodesRef(selector, this, true)
   }
 
   selectAll (selector) {
     // 小程序里跨自定义组件的后代选择器 '>>>' 在 h5 替换为普通后代选择器 '>'
-    selector = selector.replace('>>>', '>')
+    if (typeof selector === 'string') selector = selector.replace('>>>', '>')
     return new NodesRef(selector, this, false)
   }
 
@@ -123,19 +160,19 @@ class NodesRef {
 
   boundingClientRect (cb) {
     const { _selector, _component, _single, _selectorQuery } = this
-    _selectorQuery._push(_selector, _component, _single, {id: !0, dataset: !0, rect: !0, size: !0}, cb)
+    _selectorQuery._push(_selector, _component, _single, { id: !0, dataset: !0, rect: !0, size: !0 }, cb)
     return _selectorQuery
   }
 
   scrollOffset (cb) {
     const { _selector, _component, _single, _selectorQuery } = this
-    _selectorQuery._push(_selector, _component, _single, {id: !0, dataset: !0, scrollOffset: !0}, cb)
+    _selectorQuery._push(_selector, _component, _single, { id: !0, dataset: !0, scrollOffset: !0 }, cb)
     return _selectorQuery
   }
 
   fields (fields, cb) {
     const { _selector, _component, _single, _selectorQuery } = this
-    const { id, dataset, rect, size, scrollOffset, properties = [] } = fields
+    const { id, dataset, rect, size, scrollOffset, properties = [], computedStyle = [] } = fields
 
     _selectorQuery._push(_selector, _component, _single, {
       id,
@@ -143,7 +180,8 @@ class NodesRef {
       rect,
       size,
       scrollOffset,
-      properties
+      properties,
+      computedStyle
     }, cb)
 
     return _selectorQuery

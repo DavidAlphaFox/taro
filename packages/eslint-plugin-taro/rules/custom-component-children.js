@@ -4,7 +4,7 @@ const DEFAULT_Components_SET = new Set([
   'View',
   'ScrollView',
   'Swiper',
-  'MovableView',
+  'CoverImage',
   'CoverView',
   'Icon',
   'Text',
@@ -35,7 +35,9 @@ const DEFAULT_Components_SET = new Set([
   'OpenData',
   'WebView',
   'SwiperItem',
-  'Provider'
+  'Provider',
+  'MovableArea',
+  'MovableView'
 ])
 
 const ERROR_MESSAGE = '不能在自定义组件中写 children'

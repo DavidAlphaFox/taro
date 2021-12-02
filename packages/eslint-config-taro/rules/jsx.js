@@ -3,7 +3,7 @@ const htmlTags = require('../html-tags')
 const forbidElements = htmlTags.map(tag => {
   return {
     element: tag.element,
-    message: '在 Taro 中无法使用 HTML 标签。'
+    message: tag.message
   }
 })
 
@@ -14,15 +14,21 @@ module.exports = {
     }
   },
   plugins: [
-    'react'
+    'react',
+    'react-hooks'
   ],
 
   // View link below for react rules documentation
   // https://github.com/yannickcr/eslint-plugin-react#list-of-supported-rules
   rules: {
+    'react-hooks/rules-of-hooks': 'error',
+    'react-hooks/exhaustive-deps': 'warn',
     // Specify whether double or single quotes should be used in JSX attributes
     // https://eslint.org/docs/rules/jsx-quotes
     'jsx-quotes': ['error', 'prefer-single'],
+
+    'react/sort-comp': ['warn'],
+    'react/jsx-uses-react': ['error'],
 
     // Prevent passing of children as props
     // https://github.com/yannickcr/eslint-plugin-react/blob/master/docs/rules/no-children-prop.md
@@ -34,7 +40,7 @@ module.exports = {
 
     // Prevent multiple component definition per file
     // https://github.com/yannickcr/eslint-plugin-react/blob/master/docs/rules/no-multi-comp.md
-    'react/no-multi-comp': ['error', { ignoreStateless: false }],
+    'react/no-multi-comp': ['off'],
 
     // Prevent usage of isMounted
     // https://github.com/yannickcr/eslint-plugin-react/blob/master/docs/rules/no-is-mounted.md
@@ -94,7 +100,7 @@ module.exports = {
 
     // Enforce or disallow spaces inside of curly braces in JSX attributes
     // https://github.com/yannickcr/eslint-plugin-react/blob/master/docs/rules/jsx-curly-spacing.md
-    'react/jsx-curly-spacing': ['error', {'when': 'never', 'allowMultiline': true}],
+    'react/jsx-curly-spacing': ['error', { when: 'never', allowMultiline: true }],
 
     // Enforce event handler naming conventions in JSX
     // https://github.com/yannickcr/eslint-plugin-react/blob/master/docs/rules/jsx-handler-names.md
@@ -194,18 +200,13 @@ module.exports = {
     // https://github.com/yannickcr/eslint-plugin-react/blob/master/docs/rules/jsx-equals-spacing.md
     'react/jsx-equals-spacing': ['error', 'never'],
 
-    // only .jsx files may have JSX
-    // 后续支持 TSX
-    // https://github.com/yannickcr/eslint-plugin-react/blob/master/docs/rules/jsx-filename-extension.md
-    'react/jsx-filename-extension': ['error', { extensions: ['.jsx', '.js'] }],
-
     // disallow using React.render/ReactDOM.render's return value
     // https://github.com/yannickcr/eslint-plugin-react/blob/master/docs/rules/no-render-return-value.md
     'react/no-render-return-value': 'error',
 
     // Forbid certain props on Components
     // https://github.com/yannickcr/eslint-plugin-react/blob/master/docs/rules/forbid-component-props.md
-    'react/forbid-component-props': ['error', { forbid: ['ref'] }],
+    'react/forbid-component-props': ['off'],
 
     // Prevent problem with children and props.dangerouslySetInnerHTML
     // https://github.com/yannickcr/eslint-plugin-react/blob/master/docs/rules/no-danger-with-children.md
@@ -226,11 +227,12 @@ module.exports = {
     //   beforeSelfClosing: 'always',
     //   afterOpening: 'never'
     // }],
+    'react/jsx-tag-spacing': ['error', { beforeSelfClosing: 'always' }],
 
     // Enforce spaces before the closing bracket of self-closing JSX elements
-    // https://github.com/yannickcr/eslint-plugin-react/blob/master/docs/rules/jsx-space-before-closing.md
+    // https://github.com/yannickcr/eslint-plugin-react/blob/master/docs/rules/jsx-tag-spacing.md
     // Deprecated in favor of jsx-tag-spacing
-    'react/jsx-space-before-closing': ['error', 'always'],
+    // 'react/jsx-space-before-closing': ['error', 'always'],
 
     // // Prevent usage of Array index in keys
     // // https://github.com/yannickcr/eslint-plugin-react/blob/master/docs/rules/no-array-index-key.md
@@ -267,10 +269,6 @@ module.exports = {
   },
 
   settings: {
-    react: {
-      pragma: 'Taro',
-      version: '15.0'
-    },
     propWrapperFunctions: [
       'forbidExtraProps', // https://www.npmjs.com/package/airbnb-prop-types
       'exact', // https://www.npmjs.com/package/prop-types-exact

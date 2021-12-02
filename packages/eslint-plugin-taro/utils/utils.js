@@ -12,20 +12,41 @@ function buildDocsMeta (description, rule) {
 }
 
 const parserOptions = {
-  ecmaVersion: 9,
+  ecmaVersion: 2018,
   sourceType: 'module',
   ecmaFeatures: {
-    jsx: true
+    jsx: true,
+    experimentalObjectRestSpread: true
   }
+}
+
+function isTaroComponent (context, node) {
+  let classDcl
+  if (node.type === 'ClassDeclaration') {
+    classDcl = node
+  } else {
+    const parents = context.getAncestors(node)
+    classDcl = parents.find(p => p.type === 'ClassDeclaration')
+  }
+  if (
+    classDcl && classDcl.superClass
+  ) {
+    const superClass = classDcl.superClass
+    if (superClass.type === 'Identifier' && superClass.name === 'Component') {
+      return true
+    }
+    if (superClass.type === 'MemberExpression' && superClass.object.name === 'Taro' && superClass.property.name === 'Component') {
+      return true
+    }
+  }
+  return false
 }
 
 function testComponent (code) {
   return `
 class App extends Component {
   render () {
-    return (
       ${code}
-    )
   }
 }
 `
@@ -52,5 +73,6 @@ module.exports = {
   parserOptions,
   testComponent,
   testValid,
-  testInvalid
+  testInvalid,
+  isTaroComponent
 }

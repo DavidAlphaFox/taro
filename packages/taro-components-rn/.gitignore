@@ -14,7 +14,9 @@ build
 
 # jest
 coverage
-__snapshots__
 
 # tcr-testing
 tcr-testing.sh
+
+TCRNExample/android/
+TCRNExample/ios/

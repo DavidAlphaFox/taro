@@ -1,176 +1,210 @@
-# Taro
+<div align="center">
+  <h1>Taro</h1>
+  <p>开放式跨端跨框架解决方案，轻松构建可以运行在 小程序/Web/APP 上的应用</p>
+  <a href="http://makeapullrequest.com">
+    <img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square" alt="PRs Welcome">
+  </a>
+  <a href="https://www.npmjs.com/package/@tarojs/cli">
+    <img src="https://img.shields.io/node/v/@tarojs/cli.svg?style=flat-square">
+  </a>
+  <a href="https://www.npmjs.com/package/@tarojs/taro">
+    <img src="https://img.shields.io/npm/v/@tarojs/taro.svg?style=flat-square">
+  </a>
+  <a href="https://www.npmjs.com/package/@tarojs/taro">
+    <img src="https://img.shields.io/npm/l/@tarojs/taro.svg?style=flat-square">
+  </a>
+  <a href="https://www.npmjs.com/package/@tarojs/taro">
+    <img src="https://img.shields.io/npm/dt/@tarojs/taro.svg?style=flat-square">
+  </a>
+  <a href="https://travis-ci.org/NervJS/taro">
+    <img src="https://img.shields.io/travis/NervJS/taro.svg?style=flat-square">
+  </a>
+  <a href="https://github.com/NervJS/taro">
+    <img src="https://img.shields.io/github/contributors/NervJS/taro" alt="GitHub contributors">
+  </a>
+  <a href="https://github.com/NervJS/taro">
+    <img src="https://img.shields.io/github/commit-activity/w/NervJS/taro" alt="GitHub commit activity">
+  </a>
+  <a href="https://github.com/NervJS/taro">
+    <img src="https://img.shields.io/github/issues-closed/NervJS/taro" alt="GitHub closed issues">
+  </a>
+  <a href="https://github.com/NervJS/taro">
+    <img src="https://img.shields.io/github/commits-since/NervJS/taro/latest/next" alt="GitHub commits since latest release (by date)">
+  </a>
+  <a href="https://github.com/NervJS/taro">
+    <img src="https://img.shields.io/github/release-date/NervJS/taro" alt="GitHub Release Date">
+  </a>
+</div>
 
-[![](https://img.shields.io/node/v/@tarojs/cli.svg?style=flat-square)](https://www.npmjs.com/package/@tarojs/cli)
-[![](https://img.shields.io/npm/v/@tarojs/taro.svg?style=flat-square)](https://www.npmjs.com/package/@tarojs/taro)
-[![](https://img.shields.io/npm/l/@tarojs/taro.svg?style=flat-square)](https://www.npmjs.com/package/@tarojs/taro)
-[![](https://img.shields.io/npm/dt/@tarojs/taro.svg?style=flat-square)](https://www.npmjs.com/package/@tarojs/taro)
-[![](https://img.shields.io/travis/NervJS/taro.svg?style=flat-square)](https://www.npmjs.com/package/@tarojs/taro)
+[简体中文](./README.md) | [English](./README_EN.md)
 
 > 👽 Taro['tɑ:roʊ]，泰罗·奥特曼，宇宙警备队总教官，实力最强的奥特曼。
 
+## 目录
+
+1. [简介](#简介)
+2. [学习资源](#学习资源)
+3. [社区共享](#社区共享)
+4. [使用案例](#使用案例)
+5. [特性介绍](#特性介绍)
+6. [加入共建](#加入共建)
+7. [问题反馈与建议](#问题反馈与建议)
+8. [特别鸣谢](#特别鸣谢)
+9. [贡献者们](#贡献者们)
+10. [开发计划](#开发计划)
+11. [更新日志](#更新日志)
+12. [开发交流](#开发交流)
 ## 简介
 
-**Taro** 是一套遵循 [React](https://reactjs.org/) 语法规范的 **多端开发** 解决方案。现如今市面上端的形态多种多样，Web、ReactNative、微信小程序等各种端大行其道，当业务要求同时在不同的端都要求有所表现的时候，针对不同的端去编写多套代码的成本显然非常高，这时候只编写一套代码就能够适配到多端的能力就显得极为需要。
+开放式跨端跨框架解决方案，支持使用 React/Vue/Nerv 等框架来开发微信/京东/百度/支付宝/字节跳动/ QQ 小程序/H5/React Native 等应用。现如今市面上端的形态多种多样，Web、React Native、微信小程序等各种端大行其道，当业务要求同时在不同的端都要求有所表现的时候，针对不同的端去编写多套代码的成本显然非常高，这时候只编写一套代码就能够适配到多端的能力就显得极为需要
 
-使用 **Taro**，我们可以只书写一套代码，再通过 **Taro** 的编译工具，将源代码分别编译出可以在不同端（微信小程序、H5、RN等）运行的代码。
+### 版本迁移
+
+Taro 1/2 迁移至 Taro 3，请阅读[《Taro 版本升级权威指南》](https://docs.taro.zone/blog/2020-09-01-taro-versions)
+
+## 学习资源
+
+[5 分钟上手 Taro 开发](https://docs.taro.zone/docs/guide)
+
+[awesome-taro](https://github.com/NervJS/awesome-taro)
+
+掘金小册：[Taro 多端开发实现原理与实战](https://juejin.im/book/5b73a131f265da28065fb1cd?referrer=5ba228f16fb9a05d3251492d)
+
+## 社区共享
+
+[Taro 物料市场——让每一个轮子产生价值](http://taro-ext.jd.com/)
+
+### UI 库
+
+|  名称   | 地址  | 介绍 | 支持的框架  | 支持的 Taro 版本 |
+|  ----  | ----  | ----  | ----  | ----  |
+| [taro-ui](https://github.com/NervJS/taro-ui)  | https://taro-ui.jd.com/#/ | 一套基于 Taro 框架开发的多端 UI 组件库 | React | Taro 1/2/3 （Taro 3 需要安装 alpha 版本） |
+| [NutUI](https://github.com/jdf2e/nutui)  | https://nutui.jd.com/#/ | 京东风格的轻量级移动端 Vue 组件库 | Vue3 | Taro 3 |
+| [taroify](https://github.com/mallfoundry/taroify)  | https://taroify.gitee.io/taroify.com/introduce/ | 轻量、可靠的小程序端 Taro 组件库（Vant 的 Taro 版本） | React | Taro 3 |
+| [@antmjs/vantui](https://github.com/AntmJS/vantui)  | https://antmjs.github.io/vantui/#/home | 基于有赞 VantWeapp 开发的同时支持 Taro 和 React 的 UI 库 | React | Taro 3 |
 
 ## 使用案例
 
-Taro 已经投入到了生产环境使用，超过3万行代码的 TOPLIFE小程序 已全面上线。京东购物 和 一起有局 小程序 也在使用 Taro 部分重构中，即将上线。同时，未来也将接入更多京东业务。
+Taro 已经投入了我们的生产环境中使用，业界也在广泛地使用 Taro 开发多端应用。
 
-![qrcode.png](http://img14.360buyimg.com/uba/jfs/t21817/73/625556299/346228/96240192/5b14a81eN8e6a43db.png)
+<a href="https://nervjs.github.io/taro-user-cases/"><img src="https://raw.githubusercontent.com/NervJS/taro-user-cases/master/user-cases.jpg" /></a>
 
-## Taro 特性
+[征集更多优秀案例](https://github.com/NervJS/taro/issues/244)
 
-#### React 语法风格
+## 特性介绍
 
-Taro 的语法规则基于 React 规范，它采用与 React 一致的组件化思想，组件生命周期与 React 保持一致，同时在书写体验上也尽量与 React 类似，支持使用 JSX 语法，让代码具有更丰富的表现力。
+### 跨框架支持
+
+#### React/Nerv 支持
+
+在 Taro 3 中可以使用完整的 React/Nerv 开发体验，具体请参考[基础教程——React](https://docs.taro.zone/docs/react-overall)
 
 代码示例
 
 ```javascript
-import Taro, { Component } from '@tarojs/taro'
-import { View, Button } from '@tarojs/components'
+import React, { Component } from 'react'
+import { View, Text } from '@tarojs/components'
 
 export default class Index extends Component {
-  constructor () {
-    super(...arguments)
-    this.state = {
-      title: '首页',
-      list: [1, 2, 3]
-    }
+  state = {
+    msg: 'Hello World！ '
   }
+  componentWillUnmount () { }
 
-  componentWillMount () {}
+  componentDidShow () { }
 
-  componentDidMount () {}
-
-  componentWillUpdate (nextProps, nextState) {}
-
-  componentDidUpdate (prevProps, prevState) {}
-
-  shouldComponentUpdate (nextProps, nextState) {
-    return true
-  }
-
-  add = (e) => {
-    // dosth
-  }
+  componentDidHide () { }
 
   render () {
     return (
       <View className='index'>
-        <View className='title'>{this.state.title}</View>
-        <View className='content'>
-          {this.state.list.map(item => {
-            return (
-              <View className='item'>{item}</View>
-            )
-          })}
-          <Button className='add' onClick={this.add}>添加</Button>
-        </View>
+        <Text>{this.state.msg}</Text>
       </View>
     )
   }
 }
 ```
 
-#### 快速开发微信小程序
+#### Vue 支持
 
-Taro 立足于微信小程序开发，众所周知小程序的开发体验并不是非常友好，比如小程序中无法使用 npm 来进行第三方库的管理，无法使用一些比较新的ES规范等等，针对小程序端的开发弊端，Taro 具有以下的优秀特性
+在 Taro 3 中可以使用完整的 Vue 开发体验，具体请参考[基础教程——Vue](https://docs.taro.zone/docs/vue-overall)
 
-✅ 支持使用 npm/yarn 安装管理第三方依赖
+代码示例
 
-✅ 支持使用 ES7/ES8 甚至更新的ES规范，一切都可自行配置
+```vue
+<template>
+  <view class="index">
+    <text>{{msg}}</text>
+  </view>
+</template>
 
-✅ 支持使用 CSS 预编译器，例如 Sass 等
-
-✅ 支持使用 Redux进行状态管理
-
-✅ 小程序API优化，异步API Promise化等等
-
-#### 支持多端开发转化
-
-Taro 方案的初心就是为了打造一个多端开发的解决方案。目前 Taro 代码可以支持转换到 **微信小程序** 以及 **H5端**。
-
-<div align="center"><img src="http://ww1.sinaimg.cn/large/49320207gy1fr21yeoexvj20hw0tu0vg.jpg" width="320"/><br><span style="font-size: 12px; color: #999;">微信小程序</span></div>
-
-<div align="center"><img src="http://ww1.sinaimg.cn/large/49320207gy1fr226kdgeyj20i40wcgmv.jpg" width="320"/><br><span style="font-size: 12px; color: #999;">H5端</span></div>
-
-
-## 快速开始
-
-安装 Taro 开发工具 `@tarojs/cli`
-
-使用 npm或者yarn 全局安装，或者直接使用[npx](https://medium.com/@maybekatz/introducing-npx-an-npm-package-runner-55f7d4bd282b)
-
-```bash
-$ npm install -g @tarojs/cli
-$ yarn global add @tarojs/cli
+<script>
+export default {
+  data () {
+    return {
+      msg: 'Hello World!'
+    }
+  },
+  created () {},
+  onShow () {},
+  onHide () {}
+}
+</script>
 ```
 
-使用命令创建模板项目
+### 多端转换支持
 
-```bash
-$ taro init myApp
-```
+Taro 方案的初心就是为了打造一个多端开发的解决方案。
 
-npm5.2+ 也可在不全局安装的情况下使用 npx 创建模板项目
+目前 Taro 3 可以支持转换到`微信/京东/百度/支付宝/字节跳动/ QQ 小程序/H5/React Native` 等端。
 
-```bash
-$ npx @tarojs/cli init myApp
-```
+## 加入共建
 
-进入项目目录开始开发，可以选择小程序预览模式，或者H5预览模式，若使用微信小程序预览模式，则需要自行下载并打开[微信开发者工具](https://developers.weixin.qq.com/miniprogram/dev/devtools/download.html)，选择预览项目根目录下 `dist` 目录。
+#### 加入 Taro 社区共建倡议
 
-微信小程序编译预览模式
+[Taro 邀你加入社区共建](https://github.com/NervJS/taro/issues/4714)
 
-```bash
-# npm script
-$ npm run dev:weapp
-# 仅限全局安装
-$ taro build --type weapp --watch
-# npx用户也可以使用
-$ npx taro build --type weapp --watch
-```
+#### 为 Taro 贡献代码
 
-H5编译预览模式
-```bash
-# npm script
-$ npm run dev:h5
-# 仅限全局安装
-$ taro build --type h5 --watch
-# npx用户也可以使用
-$ npx taro build --type h5 --watch
-```
+Taro 非常欢迎社区开发者为 Taro 贡献代码，在贡献之前请先阅读[贡献指南](https://nervjs.github.io/taro/docs/CONTRIBUTING.html)。
 
-项目打包
+如果你想为 Taro 实现一个重要功能，需要先撰写 RFC  文档，按照 Taro 的[RFC 机制](https://github.com/NervJS/taro-rfcs)进行操作，在经过社区讨论完善后才可以进行代码的提交。
 
-打包小程序代码
-```bash
-# npm script
-$ npm build dev:weapp
-# 仅限全局安装
-$ taro build --type weapp
-# npx用户也可以使用
-$ npx taro build --type weapp
-```
+## 问题反馈与建议
 
-打包H5代码
-```bash
-# npm script
-$ npm build dev:h5
-# 仅限全局安装
-$ taro build --type h5
-# npx用户也可以使用
-$ npx taro build --type h5
-```
+[给 Taro 提 ISSUE](https://nervjs.github.io/taro-issue-helper/)
+
+> 强烈推荐阅读 [《提问的智慧》](https://github.com/ryanhanwu/How-To-Ask-Questions-The-Smart-Way)、[《如何向开源社区提问题》](https://github.com/seajs/seajs/issues/545) 和 [《如何有效地报告 Bug》](http://www.chiark.greenend.org.uk/%7Esgtatham/bugs-cn.html)、[《如何向开源项目提交无法解答的问题》](https://zhuanlan.zhihu.com/p/25795393)，更好的问题更容易获得帮助。
+
+[![Let's fund issues in this repository](https://issuehunt.io/static/embed/issuehunt-button-v1.svg)](https://issuehunt.io/repos/128624453)
+
+## 特别鸣谢
+
+[![nanjingboy](https://avatars1.githubusercontent.com/u/1390888?s=100&v=4)](https://github.com/nanjingboy/) | [![jsNewbee](https://avatars3.githubusercontent.com/u/20449400?s=100&v=4)](https://github.com/js-newbee/) | [![Qiyu8](https://avatars2.githubusercontent.com/u/15245051?s=100&v=4)](https://github.com/Qiyu8/) | [![Garfield550](https://avatars2.githubusercontent.com/u/3471836?s=100&v=4)](https://github.com/Garfield550/)
+:---:|:---:|:---:|:---:
+[nanjingboy](https://github.com/nanjingboy/) | [jsNewbee](https://github.com/js-newbee/) |  [Qiyu8](https://github.com/Qiyu8/) |  [Garfield Lee](https://github.com/Garfield550/)
+
+## 贡献者们
+
+<a href="https://github.com/NervJS/taro/graphs/contributors"><img src="https://opencollective.com/taro/contributors.svg?width=890&button=false" /></a>
+
+## 开发计划
+
+[Milestones](https://github.com/NervJS/taro/milestones)
+
+## 更新日志
+
+本项目遵从 [Angular Style Commit Message Conventions](https://gist.github.com/stephenparish/9941e89d80e2bc58a153)，更新日志请查阅 [Release](https://github.com/NervJS/taro/releases)。
+
+## 开发交流
+
+[官方交流微信群](https://github.com/NervJS/taro/issues/198)
 
 ## License
 
 MIT License
 
-Copyright (c) 2018 O2Team
+Copyright (c) O2Team
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

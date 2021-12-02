@@ -1,16 +1,17 @@
 {
   "name": "eslint-plugin-taro",
-  "version": "0.0.46",
+  "version": "3.3.15",
   "description": "Taro specific linting plugin for ESLint",
   "main": "index.js",
   "files": [
     "rules",
     "utils",
+    "constant",
     "index.js",
     "README.md"
   ],
   "scripts": {
-    "test": "mocha __tests__/*.js"
+    "//test": "mocha -R progress __tests__/*.js"
   },
   "repository": {
     "type": "git",
@@ -22,14 +23,11 @@
     "jsx"
   ],
   "peerDependencies": {
-    "babel-eslint": "^8.2.3",
-    "eslint": "^4.15.0"
+    "babel-eslint": "*",
+    "eslint": "*"
   },
   "author": "O2Team",
   "license": "MIT",
-  "devDependencies": {
-    "mocha": "^5.2.0"
-  },
   "dependencies": {
     "has": "^1.0.1"
   }

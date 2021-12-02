@@ -1,5 +1,7 @@
 # dependency
 node_modules
+webpack.config.js
+src/demo
 
 # macOS
 .DS_Store
@@ -10,8 +12,14 @@ node_modules
 
 # build
 dist
+dist-h5
 build
 
 # jest
 coverage
 __snapshots__
+.stencil
+loader
+
+# types
+src/components.d.ts

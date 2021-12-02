@@ -1,36 +1,30 @@
-const { join } = require('path')
-const resolve = require('rollup-plugin-node-resolve')
-const babel = require('rollup-plugin-babel')
-const common = require('rollup-plugin-commonjs')
-const alias = require('rollup-plugin-alias')
-const cwd = __dirname
+import { mergeWith } from 'lodash'
+import { join } from 'path'
+import resolve from 'rollup-plugin-node-resolve'
+import common from 'rollup-plugin-commonjs'
+import alias from 'rollup-plugin-alias'
+import postcss from 'rollup-plugin-postcss'
+import exportNameOnly from './build/rollup-plugin-export-name-only'
 
+const babel = require('@rollup/plugin-babel').default
+
+const cwd = __dirname
 const baseConfig = {
-  input: join(cwd, 'src/index.js'),
-  external: ['nervjs'],
-  output: [
-    {
-      file: join(cwd, 'dist/index.js'),
-      format: 'cjs',
-      sourcemap: true,
-      exports: 'named'
-    },
-    {
-      file: join(cwd, 'dist/taro-h5.js'),
-      format: 'umd',
-      name: 'TaroH5',
-      sourcemap: true,
-      exports: 'named'
-    }
-  ],
+  external: ['nervjs', '@tarojs/runtime', 'react-dom'],
+  output: {
+    format: 'cjs',
+    sourcemap: false,
+    exports: 'auto'
+  },
   plugins: [
     alias({
       '@tarojs/taro': join(cwd, '../taro/src/index')
     }),
     resolve({
       preferBuiltins: false,
-      jsnext: true
+      mainFields: ['module', 'js-next', 'main']
     }),
+    postcss(),
     babel({
       babelrc: false,
       presets: [
@@ -42,30 +36,35 @@ const baseConfig = {
         '@babel/plugin-proposal-class-properties',
         '@babel/plugin-proposal-object-rest-spread',
         ['@babel/plugin-transform-react-jsx', {
-          'pragma': 'Nerv.createElement'
+          pragma: 'Nerv.createElement'
         }]
       ]
     }),
     common()
   ]
 }
-const esmConfig = Object.assign({}, baseConfig, {
-  output: Object.assign({}, baseConfig.output, {
-    sourcemap: true,
-    format: 'es',
-    file: join(cwd, 'dist/index.esm.js')
-  })
-})
 
-function rollup () {
-  const target = process.env.TARGET
-
-  if (target === 'umd') {
-    return baseConfig
-  } else if (target === 'esm') {
-    return esmConfig
-  } else {
-    return [baseConfig, esmConfig]
+const variesConfig = [{
+  input: 'src/api/index.js',
+  output: {
+    file: 'dist/taroApis.js'
+  },
+  plugins: exportNameOnly()
+}, {
+  input: 'src/index.cjs.js',
+  output: {
+    file: 'dist/index.cjs.js'
   }
-}
-module.exports = rollup()
+}]
+
+export default variesConfig.map(v => {
+  const customizer = function (objValue, srcValue) {
+    if (Array.isArray(objValue)) {
+      return objValue.concat(srcValue)
+    }
+    if (typeof objValue === 'object') {
+      return mergeWith({}, objValue, srcValue, customizer)
+    }
+  }
+  return mergeWith({}, baseConfig, v, customizer)
+})

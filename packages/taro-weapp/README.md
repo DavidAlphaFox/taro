@@ -1,2 +1,3 @@
-# @tarojs/taro-weapp
-多端解决方案小程序端基础框架
+# `@tarojs/plugin-platform-weapp`
+
+Taro 插件。用于支持编译为微信小程序。
