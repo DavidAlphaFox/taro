@@ -15,9 +15,10 @@ declare module '../../index' {
        *
        * 可选值：
        * - 'success': 显示成功图标，此时 title 文本最多显示 7 个汉字长度;
+       * - 'error': 显示失败图标，此时 title 文本最多显示 7 个汉字长度;
        * - 'loading': 显示加载图标，此时 title 文本最多显示 7 个汉字长度;
        * - 'none': 不显示图标，此时 title 文本最多可显示两行 */
-      icon?: 'success' | 'loading' | 'none'
+      icon?: 'success' | 'error' | 'loading' | 'none'
       /** 自定义图标的本地路径，image 的优先级高于 icon */
       image?: string
       /** 是否显示透明蒙层，防止触摸穿透 */
@@ -78,6 +79,8 @@ declare module '../../index' {
 
   namespace showActionSheet {
     interface Option {
+      /** 警示文案 */
+      alertText?: string
       /** 按钮的文字数组，数组长度最大为 6 */
       itemList: string[]
       /** 接口调用结束的回调函数（调用成功、失败都会执行） */
@@ -99,6 +102,10 @@ declare module '../../index' {
 
   namespace hideToast {
     interface Option {
+      /** 目前 toast 和 loading 相关接口可以相互混用，此参数可用于取消混用特性
+       * @default false
+       */
+      noConflict?: boolean
       /** 接口调用结束的回调函数（调用成功、失败都会执行） */
       complete?: (res: TaroGeneral.CallbackResult) => void
       /** 接口调用失败的回调函数 */
@@ -110,6 +117,10 @@ declare module '../../index' {
 
   namespace hideLoading {
     interface Option {
+      /** 目前 toast 和 loading 相关接口可以相互混用，此参数可用于取消混用特性
+       * @default false
+       */
+      noConflict?: boolean
       /** 接口调用结束的回调函数（调用成功、失败都会执行） */
       complete?: (res: TaroGeneral.CallbackResult) => void
       /** 接口调用失败的回调函数 */
@@ -121,6 +132,8 @@ declare module '../../index' {
 
   namespace enableAlertBeforeUnload {
     interface Option {
+      /** 询问对话框内容 */
+      message: string
       /** 接口调用结束的回调函数（调用成功、失败都会执行） */
       complete?: (res: TaroGeneral.CallbackResult) => void
       /** 接口调用失败的回调函数 */
@@ -147,7 +160,7 @@ declare module '../../index' {
      * **注意**
      * - Taro.showLoading 和 Taro.showToast 同时只能显示一个
      * - Taro.showToast 应与 Taro.hideToast 配对使用
-     * @supported weapp, h5, rn
+     * @supported weapp, h5, rn, tt, harmony, harmony_hybrid
      * @example
      * ```tsx
      * Taro.showToast({
@@ -164,7 +177,7 @@ declare module '../../index' {
      * **注意**
      * - Android 6.7.2 以下版本，点击取消或蒙层时，回调 fail, errMsg 为 "fail cancel"；
      * - Android 6.7.2 及以上版本 和 iOS 点击蒙层不会关闭模态弹窗，所以尽量避免使用「取消」分支中实现业务逻辑
-     * @supported weapp, h5, rn
+     * @supported weapp, swan, h5, rn, tt, harmony, harmony_hybrid
      * @example
      * ```tsx
      * Taro.showModal({
@@ -188,7 +201,7 @@ declare module '../../index' {
      * **注意**
      * - Taro.showLoading 和 Taro.showToast 同时只能显示一个
      * - Taro.showLoading 应与 Taro.hideLoading 配对使用
-     * @supported weapp, h5, rn
+     * @supported weapp, h5, rn, tt, harmony_hybrid
      * @example
      * ```tsx
      * Taro.showLoading({
@@ -207,7 +220,7 @@ declare module '../../index' {
      * **注意**
      * - Android 6.7.2 以下版本，点击取消或蒙层时，回调 fail, errMsg 为 "fail cancel"；
      * - Android 6.7.2 及以上版本 和 iOS 点击蒙层不会关闭模态弹窗，所以尽量避免使用「取消」分支中实现业务逻辑
-     * @supported weapp, h5, rn
+     * @supported weapp, h5, rn, tt, harmony, harmony_hybrid
      * @example
      * ```tsx
      * Taro.showActionSheet({
@@ -225,13 +238,13 @@ declare module '../../index' {
     showActionSheet(option: showActionSheet.Option): Promise<showActionSheet.SuccessCallbackResult>
 
     /** 隐藏消息提示框
-     * @supported weapp, h5, rn
+     * @supported weapp, h5, rn, tt, harmony_hybrid
      * @see https://developers.weixin.qq.com/miniprogram/dev/api/ui/interaction/wx.hideToast.html
      */
     hideToast(option?: hideToast.Option): void
 
     /** 隐藏 loading 提示框
-     * @supported weapp, h5, rn
+     * @supported weapp, h5, rn, tt, harmony_hybrid
      * @example
      * ```tsx
      * Taro.showLoading({
@@ -257,7 +270,7 @@ declare module '../../index' {
      * ```
      * @see https://developers.weixin.qq.com/miniprogram/dev/api/ui/interaction/wx.enableAlertBeforeUnload.html
      */
-    enableAlertBeforeUnload(option?: enableAlertBeforeUnload.Option): void
+    enableAlertBeforeUnload(option: enableAlertBeforeUnload.Option): void
 
     /** 关闭小程序页面返回询问对话框
      * @supported weapp

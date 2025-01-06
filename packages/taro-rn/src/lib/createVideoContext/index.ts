@@ -1,7 +1,6 @@
 const globalAny:any = global
 
-globalAny._taroVideoMap = {}
-
+globalAny._taroVideoMap = globalAny._taroVideoMap || {}
 class VideoContext {
   private videoRef: any
 
@@ -105,6 +104,18 @@ class VideoContext {
    * @todo
    */
   showStatusBar () {
+    console.log('not support')
+  }
+
+  exitBackgroundPlayback () {
+    console.log('not support')
+  }
+
+  exitPictureInPicture () {
+    console.log('not support')
+  }
+
+  requestBackgroundPlayback () {
     console.log('not support')
   }
 

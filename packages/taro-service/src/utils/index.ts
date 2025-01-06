@@ -1,13 +1,13 @@
-import * as path from 'path'
+import * as path from 'node:path'
 
+import { chalk, getModuleDefaultExport } from '@tarojs/helper'
 import { merge } from 'lodash'
 import * as resolve from 'resolve'
-import { getModuleDefaultExport } from '@tarojs/helper'
-
-import { PluginItem } from '@tarojs/taro/types/compile'
 
 import { PluginType } from './constants'
-import { IPlugin } from './types'
+
+import type { PluginItem } from '@tarojs/taro/types/compile'
+import type { IPlugin, IPluginsObject } from './types'
 
 export const isNpmPkg: (name: string) => boolean = name => !(/^(\.|\/)/.test(name))
 
@@ -16,9 +16,9 @@ export function getPluginPath (pluginPath: string) {
   throw new Error('plugin 和 preset 配置必须为绝对路径或者包名')
 }
 
-export function convertPluginsToObject (items: PluginItem[]) {
+export function convertPluginsToObject (items: PluginItem[]): () => IPluginsObject {
   return () => {
-    const obj = {}
+    const obj: IPluginsObject = {}
     if (Array.isArray(items)) {
       items.forEach(item => {
         if (typeof item === 'string') {
@@ -43,22 +43,54 @@ export function mergePlugins (dist: PluginItem[], src: PluginItem[]) {
 }
 
 // getModuleDefaultExport
-export function resolvePresetsOrPlugins (root: string, args, type: PluginType): IPlugin[] {
-  return Object.keys(args).map(item => {
-    const fPath = resolve.sync(item, {
-      basedir: root,
-      extensions: ['.js', '.ts']
-    })
-    return {
+export function resolvePresetsOrPlugins (root: string, args: IPluginsObject, type: PluginType, skipError?: boolean): IPlugin[] {
+  // 全局的插件引入报错，不抛出 Error 影响主流程，而是通过 log 提醒然后把插件 filter 掉，保证主流程不变
+  const resolvedPresetsOrPlugins: IPlugin[] = []
+  const presetsOrPluginsNames = Object.keys(args) || []
+  for (let i = 0; i < presetsOrPluginsNames.length; i++) {
+    const item = presetsOrPluginsNames[i]
+    let fPath
+    try {
+      fPath = resolve.sync(item, {
+        basedir: root,
+        extensions: ['.js', '.ts']
+      })
+    } catch (err) {
+      if (args[item]?.backup) {
+        // 如果项目中没有，可以使用 CLI 中的插件
+        fPath = args[item]?.backup
+      } else if (skipError) {
+        // 如果跳过报错，那么 log 提醒，并且不使用该插件
+        console.log(chalk.yellow(`找不到插件依赖 "${item}"，请先在项目中安装，项目路径：${root}`))
+        continue
+      } else {
+        console.log(chalk.red(`找不到插件依赖 "${item}"，请先在项目中安装，项目路径：${root}`))
+        process.exit(1)
+      }
+    }
+    const resolvedItem = {
       id: fPath,
       path: fPath,
       type,
       opts: args[item] || {},
       apply () {
-        return getModuleDefaultExport(require(fPath))
+        try {
+          return getModuleDefaultExport(require(fPath))
+        } catch (error) {
+          console.error(error)
+          // 全局的插件运行报错，不抛出 Error 影响主流程，而是通过 log 提醒然后把插件 filter 掉，保证主流程不变
+          if (skipError) {
+            console.error(`插件依赖 "${item}" 加载失败，请检查插件配置`)
+          } else {
+            throw new Error(`插件依赖 "${item}" 加载失败，请检查插件配置`)
+          }
+        }
       }
     }
-  })
+    resolvedPresetsOrPlugins.push(resolvedItem)
+  }
+
+  return resolvedPresetsOrPlugins
 }
 
 function supplementBlank (length) {

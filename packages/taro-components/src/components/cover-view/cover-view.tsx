@@ -1,4 +1,3 @@
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { Component, Prop, h, ComponentInterface, Host, Listen, State, Event, EventEmitter } from '@stencil/core'
 import classNames from 'classnames'
 
@@ -18,7 +17,7 @@ export class CoverView implements ComponentInterface  {
     eventName: 'longpress'
   }) onLongPress: EventEmitter
 
-  private timeoutEvent: NodeJS.Timeout
+  private timeoutEvent: ReturnType<typeof setTimeout>
   private startTime = 0
 
   @Listen('touchstart')

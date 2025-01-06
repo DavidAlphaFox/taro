@@ -1,59 +1,88 @@
-import * as path from 'path'
-import * as fs from 'fs-extra'
+import * as path from 'node:path'
 
-import { merge } from 'lodash'
-import { IProjectConfig } from '@tarojs/taro/types/compile'
 import {
-  SOURCE_DIR,
-  OUTPUT_DIR,
+  createSwcRegister,
   ENTRY,
+  fs,
+  getModuleDefaultExport,
+  getUserHomeDir,
+  OUTPUT_DIR,
   resolveScriptPath,
-  createBabelRegister,
-  getModuleDefaultExport
+  SOURCE_DIR,
+  TARO_GLOBAL_CONFIG_DIR,
+  TARO_GLOBAL_CONFIG_FILE
 } from '@tarojs/helper'
+import * as ora from 'ora'
+import { merge } from 'webpack-merge'
 
 import {
   CONFIG_DIR_NAME,
   DEFAULT_CONFIG_FILE
 } from './utils/constants'
 
+import type { IProjectConfig } from '@tarojs/taro/types/compile'
+
 interface IConfigOptions {
-  appPath: string,
+  appPath: string
+  disableGlobalConfig?: boolean
 }
 
 export default class Config {
   appPath: string
   configPath: string
   initialConfig: IProjectConfig
+  initialGlobalConfig: IProjectConfig
   isInitSuccess: boolean
+  disableGlobalConfig: boolean
+
   constructor (opts: IConfigOptions) {
     this.appPath = opts.appPath
-    this.init()
+    this.disableGlobalConfig = !!opts?.disableGlobalConfig
   }
 
-  init () {
+  async init (configEnv: {
+    mode: string
+    command: string
+  }) {
+    this.initialConfig = {}
+    this.initialGlobalConfig = {}
+    this.isInitSuccess = false
     this.configPath = resolveScriptPath(path.join(this.appPath, CONFIG_DIR_NAME, DEFAULT_CONFIG_FILE))
     if (!fs.existsSync(this.configPath)) {
-      this.initialConfig = {}
-      this.isInitSuccess = false
+      if (this.disableGlobalConfig) return
+      this.initGlobalConfig()
     } else {
-      createBabelRegister({
+      createSwcRegister({
         only: [
           filePath => filePath.indexOf(path.join(this.appPath, CONFIG_DIR_NAME)) >= 0
         ]
       })
       try {
-        this.initialConfig = getModuleDefaultExport(require(this.configPath))(merge)
+        const userExport = getModuleDefaultExport(require(this.configPath))
+        this.initialConfig = typeof userExport === 'function' ? await userExport(merge, configEnv) : userExport
         this.isInitSuccess = true
       } catch (err) {
-        this.initialConfig = {}
-        this.isInitSuccess = false
         console.log(err)
       }
     }
   }
 
-  getConfigWithNamed (platform, useConfigName) {
+  initGlobalConfig () {
+    const homedir = getUserHomeDir()
+    if (!homedir) return console.error('获取不到用户 home 路径')
+    const globalPluginConfigPath = path.join(getUserHomeDir(), TARO_GLOBAL_CONFIG_DIR, TARO_GLOBAL_CONFIG_FILE)
+    if (!fs.existsSync(globalPluginConfigPath)) return
+    const spinner = ora(`开始获取 taro 全局配置文件： ${globalPluginConfigPath}`).start()
+    try {
+      this.initialGlobalConfig = fs.readJSONSync(globalPluginConfigPath) || {}
+      spinner.succeed('获取 taro 全局配置成功')
+    } catch (e) {
+      spinner.stop()
+      console.warn(`获取全局配置失败，如果需要启用全局插件请查看配置文件: ${globalPluginConfigPath} `)
+    }
+  }
+
+  getConfigWithNamed (platform, configName) {
     const initialConfig = this.initialConfig
     const sourceDirName = initialConfig.sourceRoot || SOURCE_DIR
     const outputDirName = initialConfig.outputRoot || OUTPUT_DIR
@@ -73,6 +102,9 @@ export default class Config {
       outputRoot: outputDirName,
       platform,
       framework: initialConfig.framework,
+      compiler: initialConfig.compiler,
+      cache: initialConfig.cache,
+      logger: initialConfig.logger,
       baseLevel: initialConfig.baseLevel,
       csso: initialConfig.csso,
       sass: initialConfig.sass,
@@ -84,8 +116,12 @@ export default class Config {
       designWidth: initialConfig.designWidth,
       deviceRatio: initialConfig.deviceRatio,
       projectConfigName: initialConfig.projectConfigName,
+      jsMinimizer: initialConfig.jsMinimizer,
+      cssMinimizer: initialConfig.cssMinimizer,
       terser: initialConfig.terser,
-      ...initialConfig[useConfigName]
+      esbuild: initialConfig.esbuild,
+      ...initialConfig[configName],
+      ...initialConfig[platform],
     }
   }
 }

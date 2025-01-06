@@ -1,8 +1,8 @@
-import fs from 'fs'
-import path from 'path'
-import { Options } from 'sass'
-import { insertAfter, insertBefore, resolveStyle, getAdditionalData } from '../utils'
-import { TransformOptions, RenderResult, RenderAdditionalResult } from '../types'
+import * as fs from 'node:fs'
+import * as path from 'node:path'
+
+import { RenderAdditionalResult, RenderResult, SassConfig, SassGlobalConfig, TransformOptions } from '../types'
+import { getAdditionalData, insertAfter, insertBefore, resolveStyle, sortStyle } from '../utils'
 
 /**
  * 用过用户手动安装了 node-sass，启用node-sass，默认使用 sass
@@ -25,20 +25,6 @@ function getSassImplementation () {
 }
 
 const sassImplementation = getSassImplementation()
-
-// https://github.com/sass/node-sass#options
-export interface Config {
-  sass?: SassGlobalConfig
-  alias?: Record<string, string>
-  options?: Options
-  additionalData?: string | ((key: string) => string)
-}
-
-export interface SassGlobalConfig {
-  resource?: string | string[];
-  projectDirectory?: string;
-  data?: string;
-}
 
 function makeURL (resource: string, rootDir: string) {
   const url = path.resolve(rootDir, resource)
@@ -69,9 +55,9 @@ function getGlobalResource (filename: string, config: SassGlobalConfig) {
   return insertAfter(resource, config?.data)
 }
 
-function combineResource (src: string, filename: string, config: Config) {
+function combineResource (src: string, filename: string, config: SassConfig) {
   // sass config
-  const globalResource = getGlobalResource(filename, config.sass)
+  const globalResource = getGlobalResource(filename, config.sass || {})
 
   // sass tranform config
   const additionalData = getAdditionalData(src, config.additionalData)
@@ -79,7 +65,7 @@ function combineResource (src: string, filename: string, config: Config) {
   return insertAfter(globalResource, additionalData)
 }
 
-function renderToCSS (src, filename, options, transformOptions) {
+function renderToCSS (src, filename, options, transformOptions: TransformOptions) {
   const defaultOpts = {
     importer: function (...params) { /* url, prev, done */
       let [url, prev] = params
@@ -89,6 +75,9 @@ function renderToCSS (src, filename, options, transformOptions) {
       // this.options contains this options hash, this.callback contains the node-style callback
       let basedir = ''
       let defaultExt = ''
+      if (process.platform === 'win32') {
+        prev = decodeURIComponent(prev)
+      }
       if (path.isAbsolute(prev)) {
         ({ dir: basedir, ext: defaultExt } = path.parse(prev))
       } else {
@@ -134,11 +123,12 @@ function renderToCSS (src, filename, options, transformOptions) {
 export default function transform (
   src: string,
   filename: string,
-  config: Config,
+  config: SassConfig,
   transformOptions: TransformOptions
 ) {
   const additionalData = combineResource(src, filename, config)
   let data = insertBefore(src, additionalData)
+  data = sortStyle(data)
 
   if (!data) {
     data = `\n${data}` // fix empty file error. reference https://github.com/sass/node-sass/blob/91c40a0bf0a3923ab9f91b82dcd479c25486235a/lib/index.js#L430
@@ -148,7 +138,7 @@ export default function transform (
     data,
     filename,
     {
-      file: filename,
+      // file: filename, // fix[issues/11983]: with file option，dart-sass importer donot execute。
       outFile: `${filename}.map`,
       sourceMap: true, // If no outFile is set, sourceMap parameter is ignored.
       alias: config.alias,

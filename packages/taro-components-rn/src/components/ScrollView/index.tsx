@@ -21,16 +21,17 @@
 
 import * as React from 'react'
 import {
-  ScrollView,
   FlatList,
-  NativeSyntheticEvent,
-  NativeScrollEvent,
   LayoutChangeEvent,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
+  ScrollView,
   StyleSheet,
   ViewStyle
 } from 'react-native'
-import { omit, noop } from '../../utils'
-import { ScrollViewProps, ScrollViewState, ScrollMetrics } from './PropsType'
+
+import { noop, omit } from '../../utils'
+import { ScrollMetrics, ScrollViewProps, ScrollViewState } from './PropsType'
 
 // const SCROLLVIEW_CONT_STYLE = [
 //   // Source code of ScrollView, ['alignItems','justifyContent']
@@ -78,13 +79,13 @@ class _ScrollView extends React.Component<ScrollViewProps<any>, ScrollViewState>
   _scrollEventThrottle = 50
   _hasCallScrollToUpperInRange = true
   _hasCallScrollToLowerInRange = false
-  _initialScrollIndexTimeout: any
+  _initialScrollIndexTimeout: ReturnType<typeof setTimeout>
 
-  _selectLength = (metrics: { height: number; width: number }): number => {
+  _selectLength = (metrics: { height: number, width: number }): number => {
     return !this.props.scrollX ? metrics.height : metrics.width
   }
 
-  _selectOffset = (metrics: { x: number; y: number }): number => {
+  _selectOffset = (metrics: { x: number, y: number }): number => {
     return !this.props.scrollX ? metrics.y : metrics.x
   }
 
@@ -215,7 +216,7 @@ class _ScrollView extends React.Component<ScrollViewProps<any>, ScrollViewState>
     )
   }
 
-  componentDidUpdate(prevProps: ScrollViewProps<any>, prevState: ScrollViewState, snapshot: boolean): void {
+  componentDidUpdate(_prevProps: ScrollViewProps<any>, _prevState: ScrollViewState, snapshot: boolean): void {
     if (snapshot) {
       this.scrollToOffset(this.state.snapScrollLeft, this.state.snapScrollTop)
     }
@@ -268,7 +269,6 @@ class _ScrollView extends React.Component<ScrollViewProps<any>, ScrollViewState>
         'onScroll',
         'onScrollEndDrag',
         'onMomentumScrollEnd',
-        'scrollEventThrottle',
         'scrollsToTop',
         'style',
         'contentContainerStyle',
@@ -285,7 +285,7 @@ class _ScrollView extends React.Component<ScrollViewProps<any>, ScrollViewState>
         {...scrollElementProps}
         data={data}
         renderItem={renderItem}
-        keyExtractor={(item, index) => index + ''}
+        keyExtractor={(_item, index) => index + ''}
       />
     ) : (
       <ScrollView {...scrollElementProps}>{children}</ScrollView>

@@ -1,4 +1,4 @@
-import { errorHandler, successHandler } from "../../utils"
+import { errorHandler, successHandler } from '../../utils'
 
 function serializeParams(params) {
   if (!params) {
@@ -33,10 +33,10 @@ function _request<T = any>(options: Taro.request.Option): Taro.RequestTask<T> {
     url = generateRequestUrlWithParams(url, data)
   } else {
     if (typeof data === 'object') {
-      const contentType = options.header && (options.header['content-type'] || options.header['Content-Type'])
-      if (contentType === 'application/json') {
+      const contentType = options.header && (options.header['content-type'] || options.header['Content-Type']) || 'application/json'
+      if (contentType.startsWith('application/json')) {
         data = JSON.stringify(data)
-      } else if (contentType === 'application/x-www-form-urlencoded') {
+      } else if (contentType.startsWith('application/x-www-form-urlencoded')) {
         data = serializeParams(data)
       }
     }
@@ -53,7 +53,7 @@ function _request<T = any>(options: Taro.request.Option): Taro.RequestTask<T> {
   params.method = method
   let controller
   // eslint-disable-next-line no-undef
-  if (AbortController) {
+  if (typeof (AbortController) !== 'undefined') {
     // eslint-disable-next-line no-undef
     controller = new AbortController()
     const signal = controller.signal
@@ -78,12 +78,12 @@ function _request<T = any>(options: Taro.request.Option): Taro.RequestTask<T> {
       return response
     })
 
-  const timeoutPromise = new Promise((resolve, reject) => {
+  const timeoutPromise = new Promise((_resolve, reject) => {
     const timer = setTimeout(() => {
       controller?.abort()
       reject(Error('request:fail timeout'))
       clearTimeout?.(timer)
-    }, options.timeout ?? 2000)
+    }, options.timeout ?? 60000)
   })
 
   const p: any = Promise.race([fetchPromise, timeoutPromise]).then(resData => {

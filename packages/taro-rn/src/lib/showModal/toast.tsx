@@ -1,9 +1,13 @@
-import React from 'react'
 import PropTypes from 'prop-types'
-import { View, Text, Image, StyleSheet, ActivityIndicator } from 'react-native'
+import React from 'react'
+import { ActivityIndicator, Image, StyleSheet, Text, View } from 'react-native'
 import RootSiblings from 'react-native-root-siblings'
-import successPng from './success.png'
+
 import { errorHandler, shouldBeObject, successHandler } from '../../utils'
+import errorPng from './error.png'
+import successPng from './success.png'
+
+const globalAny: any = global
 
 const styles = StyleSheet.create({
   toastView: {
@@ -115,7 +119,7 @@ function showToast (options: Taro.showToast.Option): Promise<TaroGeneral.Callbac
     return Promise.reject(res)
   }
 
-  let {title = '', icon = 'success', image, duration = 1500, mask = false, success, fail, complete} = options || {} // eslint-disable-line
+  let { title = '', icon = 'success', image, duration = 1500, mask = false, success, fail, complete } = options || {} // eslint-disable-line
 
   const isLoading = (icon === 'loading')
 
@@ -135,7 +139,7 @@ function showToast (options: Taro.showToast.Option): Promise<TaroGeneral.Callbac
       </View>
     </View>
   } else if (isLoading) {
-    ToastView = <WXLoading title={title} mask={mask}/>
+    ToastView = <WXLoading title={title} mask={mask} />
   } else if (icon === 'none') {
     ToastView = <View style={maskStyle}>
       <View style={styles.textGrayBlock}>
@@ -146,7 +150,7 @@ function showToast (options: Taro.showToast.Option): Promise<TaroGeneral.Callbac
     ToastView = <View style={maskStyle}>
       <View style={styles.grayBlock}>
         <View style={styles.toastView}>
-          <Image source={successPng} style={styles.toastIcon} />
+          <Image source={icon === 'error' ? errorPng : successPng} style={styles.toastIcon} />
           <Text style={styles.toastContent}>{title || ''}</Text>
         </View>
       </View>
@@ -156,15 +160,15 @@ function showToast (options: Taro.showToast.Option): Promise<TaroGeneral.Callbac
   try {
     // setTimeout fires incorrectly when using chrome debug #4470
     // https://github.com/facebook/react-native/issues/4470
-    (global as any).wxToastRootSiblings && (global as any).wxToastRootSiblings.destroy();
+    globalAny.wxToastRootSiblings && globalAny.wxToastRootSiblings.destroy()
 
-    (global as any).wxToastRootSiblings = new RootSiblings(ToastView)
+    globalAny.wxToastRootSiblings = new RootSiblings(ToastView)
     setTimeout(() => {
-      (global as any).wxToastRootSiblings && (global as any).wxToastRootSiblings.update(ToastView)
+      globalAny.wxToastRootSiblings && globalAny.wxToastRootSiblings.update(ToastView)
     }, 100)
     if (duration > 0) {
       setTimeout(() => {
-        (global as any).wxToastRootSiblings && (global as any).wxToastRootSiblings.destroy()
+        globalAny.wxToastRootSiblings && globalAny.wxToastRootSiblings.destroy()
       }, duration)
     }
     return successHandler(success, complete)(res)
@@ -174,7 +178,7 @@ function showToast (options: Taro.showToast.Option): Promise<TaroGeneral.Callbac
   }
 }
 
-function showLoading (options: Taro.showLoading.Option): Promise<TaroGeneral.CallbackResult> {
+function showLoading (options: Taro.showLoading.Option = { title: '加载中' }): Promise<TaroGeneral.CallbackResult> {
   const isObject = shouldBeObject(options)
   if (!isObject.res) {
     const res = { errMsg: `showLoading${isObject.msg}` }
@@ -199,8 +203,8 @@ function hideToast (opts: Taro.hideToast.Option = {}): void {
   const { success, fail, complete } = opts
 
   try {
-    (global as any).wxToastRootSiblings && (global as any).wxToastRootSiblings.destroy();
-    (global as any).wxToastRootSiblings = undefined
+    globalAny.wxToastRootSiblings && globalAny.wxToastRootSiblings.destroy()
+    globalAny.wxToastRootSiblings = undefined
     const res = { errMsg: 'showToast:ok' }
     success?.(res)
     complete?.(res)
@@ -215,8 +219,8 @@ function hideLoading (opts: Taro.hideLoading.Option = {}): void {
   const { success, fail, complete } = opts
 
   try {
-    (global as any).wxToastRootSiblings && (global as any).wxToastRootSiblings.destroy();
-    (global as any).wxToastRootSiblings = undefined
+    globalAny.wxToastRootSiblings && globalAny.wxToastRootSiblings.destroy()
+    globalAny.wxToastRootSiblings = undefined
     const res = { errMsg: 'showLoading:ok' }
     success?.(res)
     complete?.(res)
@@ -228,8 +232,8 @@ function hideLoading (opts: Taro.hideLoading.Option = {}): void {
 }
 
 export {
-  showToast,
-  showLoading,
+  hideLoading,
   hideToast,
-  hideLoading
+  showLoading,
+  showToast
 }

@@ -1,11 +1,13 @@
-import fs from 'fs'
-import path from 'path'
+import * as fs from 'node:fs'
+import * as path from 'node:path'
+
 import { printLog, processTypeEnum } from '@tarojs/helper'
-import { ResolveStyleOptions, LogLevelEnum } from '../types'
-import resolve from 'resolve'
+import * as resolve from 'resolve'
 import nodeModulesPaths from 'resolve/lib/node-modules-paths'
 
-export function insertBefore (source: string, additional: string) {
+import { ResolveLogLevelEnum, ResolveStyleOptions } from '../types'
+
+export function insertBefore (source?: string, additional?: string) {
   if (!source && !additional) {
     return ''
   }
@@ -18,7 +20,35 @@ export function insertBefore (source: string, additional: string) {
   return additional + ';\n' + source
 }
 
-export function insertAfter (source: string, additional: string) {
+/**
+ * sort scss source by \@use
+ * @param source scss source
+ * @returns  sorted scss source
+ */
+export function sortStyle (source) {
+  if (!source) {
+    return ''
+  }
+
+  if (source.indexOf('@use') === -1 && source.indexOf('@import') === -1) {
+    return source
+  }
+
+  // @use highest priority
+  const useReg = /@use\s+['"](.*)['"];/g
+  const useList: string[] = []
+  let match: RegExpExecArray | null = null
+  while ((match = useReg.exec(source))) {
+    useList.push(match[0])
+    source = source.replace(match[0], '')
+  }
+
+  // css last
+  const css = source.trim()
+  return [...useList, css].join('\n')
+}
+
+export function insertAfter (source?: string, additional?: string) {
   if (!source && !additional) {
     return ''
   }
@@ -62,7 +92,7 @@ export function resolveStyle (id: string, opts: ResolveStyleOptions) {
     paths = [],
     alias = {},
     defaultExt = '',
-    logLevel = LogLevelEnum.ERROR
+    logLevel = ResolveLogLevelEnum.ERROR
   } = opts
   id = id.trim()
   Object.keys(alias).forEach(key => {
@@ -82,7 +112,7 @@ export function resolveStyle (id: string, opts: ResolveStyleOptions) {
     ext
   ]
 
-  let file: string
+  let file = ''
   let isNodeModulesPath = false
   try {
     if ((/^(?:\.\.?(?:\/|$)|\/|([A-Za-z]:)?[/\\])/).test(id)) {
@@ -93,8 +123,7 @@ export function resolveStyle (id: string, opts: ResolveStyleOptions) {
       // like `@import 'taro-ui/dist/base.css';` or `@import '~taro-ui/dist/base.css';`
       file = resolve.sync(path.join(dir, name).replace(/^~/, ''), { basedir, extensions })
     }
-  } catch (error) {
-  }
+  } catch (error) { } // eslint-disable-line no-empty
 
   if (!file) {
     let includePaths = incPaths
@@ -107,10 +136,10 @@ export function resolveStyle (id: string, opts: ResolveStyleOptions) {
         ${includePaths.join(',\n       ')}
       ]
     `
-    if (logLevel === LogLevelEnum.ERROR) {
+    if (logLevel === ResolveLogLevelEnum.ERROR) {
       throw new Error(levelMessage)
     }
-    if (logLevel === LogLevelEnum.WARNING) {
+    if (logLevel === ResolveLogLevelEnum.WARNING) {
       printLog(processTypeEnum.WARNING, levelMessage)
       return id
     }
@@ -187,7 +216,7 @@ export function normalizeSourceMap (map, resourcePath) {
 }
 // copy end
 
-export function getAdditionalData (data: string, config: string | ((key: string) => string)) {
+export function getAdditionalData (data: string, config?: string | ((key: string) => string)) {
   let additionalData = ''
   if (typeof config !== 'undefined') {
     additionalData =

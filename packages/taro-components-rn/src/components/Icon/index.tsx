@@ -6,14 +6,15 @@
 
 import * as React from 'react'
 import {
-  View,
-  Image
+  Image,
+  View
 } from 'react-native'
+
 import * as WEUI from '../../assets/weui'
 import { IconProps } from './PropsType'
 
 interface UIType {
-  [key: string]: any;
+  [key: string]: any
 }
 
 const iconTypeMap: { [key: string]: string } = {
@@ -49,8 +50,9 @@ const _Icon: React.FC<IconProps> = ({
   const iconColor: string = color || iconObj.defaultColor
 
   return (
-    <View style={[style, { width: size, height: size }]}>
+    <View testID='icon' style={[style, { width: size, height: size }]}>
       <Image
+        testID='image'
         source={imageAsset}
         style={{
           width: size,

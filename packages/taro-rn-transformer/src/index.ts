@@ -1,11 +1,11 @@
-import * as path from 'path'
-import appLoader, { getAppPages } from './app'
-import componentLoader from './page'
-import { TransformType, globalAny } from './types/index'
-import { isPageFile, getCommonStyle, isSourceComponent, isNPMComponent } from './utils'
+import * as path from 'node:path'
 
-// eslint-disable-next-line import/no-commonjs
-module.exports.transform = function ({ src, filename, options }: TransformType) {
+import appLoader, { getAppConfig as _getAppConfig, getAppPages } from './app'
+import componentLoader from './component'
+import { globalAny, TransformType } from './types/index'
+import { getCommonStyle, isNPMComponent, isPageFile, isSourceComponent } from './utils'
+
+export function transform ({ src, filename, options }: TransformType) {
   let code = src
   const sourceDir = options?.sourceRoot || 'src'
   const entryName = options?.entry || 'app'
@@ -44,6 +44,9 @@ module.exports.transform = function ({ src, filename, options }: TransformType) 
   return options.nextTransformer({
     src: code,
     filename: filename,
-    options: options
+    options: options,
+    plugins: options.plugins
   })
 }
+
+export const getAppConfig = _getAppConfig

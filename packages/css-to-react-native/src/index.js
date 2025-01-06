@@ -1,9 +1,10 @@
-import mediaQuery from 'css-mediaquery'
-import transformCSS from './css-to-react-native'
 import parseCSS from 'css/lib/parse'
+import mediaQuery from 'css-mediaquery'
+
+import transformCSS from './css-to-react-native'
 import {
   dimensionFeatures,
-  mediaQueryFeatures
+  mediaQueryFeatures,
 } from './transforms/media-queries/features'
 import { mediaQueryTypes } from './transforms/media-queries/types'
 import { remToPx } from './transforms/rem'
@@ -15,12 +16,13 @@ import { values } from './utils/values'
 const lengthRe = /^(0$|(?:[+-]?(?:\d*\.)?\d+(?:[Ee][+-]?\d+)?)(?=px|rem$))/
 const viewportUnitRe = /^([+-]?[0-9.]+)(vh|vw|vmin|vmax)$/
 const percentRe = /^([+-]?(?:\d*\.)?\d+(?:[Ee][+-]?\d+)?%)$/
-const unsupportedUnitRe = /^([+-]?(?:\d*\.)?\d+(?:[Ee][+-]?\d+)?(ch|em|ex|cm|mm|in|pc|pt))$/
+const unsupportedUnitRe =
+  /^([+-]?(?:\d*\.)?\d+(?:[Ee][+-]?\d+)?(ch|em|ex|cm|mm|in|pc|pt))$/
 const shorthandBorderProps = [
   'border-radius',
   'border-width',
   'border-color',
-  'border-style'
+  'border-style',
 ]
 
 const transformDecls = (styles, declarations, result, options = {}) => {
@@ -43,7 +45,8 @@ const transformDecls = (styles, declarations, result, options = {}) => {
       !isPercent &&
       !isUnsupportedUnit
     ) {
-      throw new Error(`Failed to parse declaration "${property}: ${value}"`)
+      // ignore invalid value avoid throw error cause app crash
+      continue
     }
 
     if (!result.__viewportUnits && isViewportUnit) {
@@ -52,12 +55,15 @@ const transformDecls = (styles, declarations, result, options = {}) => {
     // scalable option, when it is false, transform single value 'px' unit to 'PX'
     // do not be wrapped by scalePx2dp function
     if (
-      isLengthUnit &&
       typeof options.scalable === 'boolean' &&
       !options.scalable &&
       /(\d+)px/.test(value)
     ) {
-      value = value.replace(/(\d+)px/, '$1PX')
+      value = value.replace(/(\d+)px/g, '$1PX')
+    }
+    // expect value is legal so that remove !import
+    if (/!import/i.test(value)) {
+      value = value.replace(/!import/, '')
     }
 
     if (shorthandBorderProps.indexOf(property) > -1) {
@@ -99,7 +105,7 @@ const transform = (css, options) => {
 
           if (isAlreadyDefinedAsClass) {
             throw new Error(
-              `Failed to parse :export block because a CSS class in the same file is already using the name "${property}"`
+              `Failed to parse :export block because a CSS class in the same file is already using the name "${property}"`,
             )
           }
 
@@ -132,12 +138,12 @@ const transform = (css, options) => {
     ) {
       const parsed = mediaQuery.parse(rule.media)
 
-      parsed.forEach(mq => {
+      parsed.forEach((mq) => {
         if (mediaQueryTypes.indexOf(mq.type) === -1) {
           throw new Error(`Failed to parse media query type "${mq.type}"`)
         }
 
-        mq.expressions.forEach(e => {
+        mq.expressions.forEach((e) => {
           const mf = e.modifier ? `${e.modifier}-${e.feature}` : e.feature
           const val = e.value ? `: ${e.value}` : ''
 
@@ -150,7 +156,7 @@ const transform = (css, options) => {
             lengthRe.test(e.value) === false
           ) {
             throw new Error(
-              `Failed to parse media query expression "(${mf}${val})"`
+              `Failed to parse media query expression "(${mf}${val})"`,
             )
           }
         })
@@ -182,8 +188,6 @@ const transform = (css, options) => {
   return result
 }
 
-export {
-  transformCSS
-}
+export { transformCSS }
 
 export default transform

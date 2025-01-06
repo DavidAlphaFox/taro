@@ -1,33 +1,27 @@
-import { createEvent } from '../dom/event'
-import { isBrowser, doc } from '../env'
-import ioc_container from '../container'
-import SERVICE_IDENTIFIER from '../constants/identifiers'
-import { ElementNames, InstanceNamedFactory } from '../interface'
 import {
-  HTML,
-  HEAD,
-  BODY,
   APP,
-  CONTAINER
+  BODY,
+  CONTAINER,
+  HEAD,
+  HTML
 } from '../constants'
+import { TaroDocument } from '../dom/document'
+import env from '../env'
 
-import type { TaroDocumentInstance } from '../interface'
-
-export function createDocument () {
+function createDocument (): TaroDocument {
   /**
-   * <document>
-   *   <html>
-   *     <head></head>
-   *     <body>
-   *       <container>
-   *         <app id="app" />
-   *       </container>
-   *     </body>
-   *   </html>
-   * </document>
-   */
-  const getElement = ioc_container.get<InstanceNamedFactory>(SERVICE_IDENTIFIER.TaroElementFactory)
-  const doc = getElement(ElementNames.Document)() as TaroDocumentInstance
+     * <document>
+     *   <html>
+     *     <head></head>
+     *     <body>
+     *       <container>
+     *         <app id="app" />
+     *       </container>
+     *     </body>
+     *   </html>
+     * </document>
+     */
+  const doc = new TaroDocument()
   const documentCreateElement = doc.createElement.bind(doc)
   const html = documentCreateElement(HTML)
   const head = documentCreateElement(HEAD)
@@ -45,9 +39,9 @@ export function createDocument () {
   doc.documentElement = html
   doc.head = head
   doc.body = body
-  doc.createEvent = createEvent
 
   return doc
 }
 
-export const document = (isBrowser ? doc : createDocument()) as TaroDocumentInstance
+// Note: 小程序端 vite 打包成 commonjs，const document = xxx 会报错，所以把 document 改为 taroDocumentProvider
+export const taroDocumentProvider: TaroDocument = process.env.TARO_PLATFORM === 'web' ? env.document : (env.document = createDocument())

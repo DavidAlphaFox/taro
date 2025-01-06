@@ -1,33 +1,43 @@
-import * as webpack from 'webpack'
-import { getOptions, stringifyRequest } from 'loader-utils'
-import { normalizePath } from '@tarojs/helper'
+import * as path from 'node:path'
 
-import { frameworkMeta } from './utils'
+import { REG_POST } from './constants'
+import { entryCache } from './entry-cache'
+import { stringifyRequest } from './util'
 
-export default function (this: webpack.loader.LoaderContext) {
+import type * as webpack from 'webpack'
+
+export default function (this: webpack.LoaderContext<any>, source: string) {
   const stringify = (s: string): string => stringifyRequest(this, s)
 
-  const options = getOptions(this)
-  const { importFrameworkStatement, frameworkArgs, creator } = frameworkMeta[options.framework]
+  const options = this.getOptions()
+  const { importFrameworkStatement, frameworkArgs, creator, creatorLocation, modifyInstantiate } = options.loaderMeta
   const config = JSON.stringify(options.config)
   const blended = options.blended
+  const newBlended = options.newBlended
   const pxTransformConfig = options.pxTransformConfig
-  const loaders = this.loaders
-  const thisLoaderIndex = loaders.findIndex(item => normalizePath(item.path).indexOf('@tarojs/taro-loader') >= 0)
+  const { globalObject } = this._compilation?.outputOptions || { globalObject: 'wx' }
+  const entryCacheLoader = path.join(__dirname, 'entry-cache.js') + '?name=app'
+  entryCache.set('app', source)
 
   const prerender = `
 if (typeof PRERENDER !== 'undefined') {
-  global._prerender = inst
+  ${globalObject}._prerender = inst
 }`
 
   const runtimePath = Array.isArray(options.runtimePath) ? options.runtimePath : [options.runtimePath]
+  let setReconcilerPost = ''
   const setReconciler = runtimePath.reduce((res, item) => {
-    return res + `import '${item}'\n`
+    if (REG_POST.test(item)) {
+      setReconcilerPost += `import '${item.replace(REG_POST, '')}'\n`
+      return res
+    } else {
+      return res + `import '${item}'\n`
+    }
   }, '')
 
   const createApp = `${creator}(component, ${frameworkArgs})`
 
-  const instantiateApp = blended
+  let instantiateApp = blended || newBlended
     ? `
 var app = ${createApp}
 app.onLaunch()
@@ -35,10 +45,16 @@ exports.taroApp = app
 `
     : `var inst = App(${createApp})`
 
+  if (typeof modifyInstantiate === 'function') {
+    instantiateApp = modifyInstantiate(instantiateApp, 'app')
+  }
+
   return `${setReconciler}
-import { ${creator}, window } from '@tarojs/runtime'
+import { window } from '@tarojs/runtime'
+import { ${creator} } from '${creatorLocation}'
 import { initPxTransform } from '@tarojs/taro'
-import component from ${stringify(this.request.split('!').slice(thisLoaderIndex + 1).join('!'))}
+${setReconcilerPost}
+import component from ${stringify(['!', entryCacheLoader, this.resourcePath].join('!'))}
 ${importFrameworkStatement}
 var config = ${config};
 window.__taroAppConfig = config
@@ -46,7 +62,10 @@ ${instantiateApp}
 ${options.prerender ? prerender : ''}
 initPxTransform({
   designWidth: ${pxTransformConfig.designWidth},
-  deviceRatio: ${JSON.stringify(pxTransformConfig.deviceRatio)}
+  deviceRatio: ${JSON.stringify(pxTransformConfig.deviceRatio)},
+  baseFontSize: ${pxTransformConfig.baseFontSize || 20},
+  unitPrecision: ${pxTransformConfig.unitPrecision},
+  targetUnit: ${JSON.stringify(pxTransformConfig.targetUnit)}
 })
 `
 }

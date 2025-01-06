@@ -8,10 +8,13 @@ import * as React from 'react'
 import {
   View,
 } from 'react-native'
+
 import { noop } from '../../utils'
 import { CheckboxGroupProps, EventOnChange, ValueProps } from './PropsType'
 
 class _CheckboxGroup extends React.Component<CheckboxGroupProps> {
+  static displayName = '_CheckboxGroup'
+
   values: ValueProps[] = []
   tmpIndex = 0
 

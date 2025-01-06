@@ -1,6 +1,7 @@
-import * as fs from 'fs-extra'
-import * as path from 'path'
-import { isWindows, chalk } from '@tarojs/helper'
+import * as path from 'node:path'
+
+import { chalk, fs, isWindows } from '@tarojs/helper'
+import { exec } from 'child_process'
 
 export function getRootPath (): string {
   return path.resolve(__dirname, '../../')
@@ -25,18 +26,18 @@ export function printPkgVersion () {
   console.log()
 }
 
-export const getAllFilesInFloder = async (
-  floder: string,
+export const getAllFilesInFolder = async (
+  folder: string,
   filter: string[] = []
 ): Promise<string[]> => {
   let files: string[] = []
-  const list = readDirWithFileTypes(floder)
+  const list = readDirWithFileTypes(folder)
 
   await Promise.all(
     list.map(async item => {
-      const itemPath = path.join(floder, item.name)
+      const itemPath = path.join(folder, item.name)
       if (item.isDirectory) {
-        const _files = await getAllFilesInFloder(itemPath, filter)
+        const _files = await getAllFilesInFolder(itemPath, filter)
         files = [...files, ..._files]
       } else if (item.isFile) {
         if (!filter.find(rule => rule === item.name)) files.push(itemPath)
@@ -63,10 +64,10 @@ interface FileStat {
   isFile: boolean
 }
 
-export function readDirWithFileTypes (floder: string): FileStat[] {
-  const list = fs.readdirSync(floder)
+export function readDirWithFileTypes (folder: string): FileStat[] {
+  const list = fs.readdirSync(folder)
   const res = list.map(name => {
-    const stat = fs.statSync(path.join(floder, name))
+    const stat = fs.statSync(path.join(folder, name))
     return {
       name,
       isDirectory: stat.isDirectory(),
@@ -89,4 +90,38 @@ Example:
 ${exampleCommand}
 `))
   }
+}
+
+export function clearConsole () {
+  const readline = require('readline')
+  if (process.stdout.isTTY) {
+    const blank = '\n'.repeat(process.stdout.rows)
+    console.log(blank)
+    readline.cursorTo(process.stdout, 0, 0)
+    readline.clearScreenDown(process.stdout)
+  }
+}
+
+export function execCommand (params: {
+  command: string
+  successCallback?: (data: string) => void
+  failCallback?: (data: string) => void
+}) {
+  const { command, successCallback, failCallback } = params
+  const child = exec(command)
+  child.stdout!.on('data', function (data) {
+    successCallback?.(data)
+  })
+  child.stderr!.on('data', function (data) {
+    failCallback?.(data)
+  })
+}
+
+export function getPkgNameByFilterVersion (pkgString: string) {
+  const versionFlagIndex = pkgString.lastIndexOf('@')
+  return versionFlagIndex === 0 ? pkgString : pkgString.slice(0, versionFlagIndex)
+}
+
+export function isNil (value: any): value is null | undefined {
+  return value === null || value === undefined
 }

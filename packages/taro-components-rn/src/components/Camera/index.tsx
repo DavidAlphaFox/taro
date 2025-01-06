@@ -1,8 +1,8 @@
+import { BarCodeScanningResult, Camera, CameraMountError, CameraType, PermissionStatus } from 'expo-camera'
 import React, { Component } from 'react'
-import View from '../View'
+
 import Text from '../Text'
-import { BarCodeScanningResult, Camera, CameraMountError, PermissionStatus } from 'expo-camera'
-import { BarCodeScanner } from 'expo-barcode-scanner'
+import View from '../View'
 import { CameraProps, CameraState } from './PropsType'
 import styles from './styles'
 
@@ -17,9 +17,9 @@ export class _Camera extends Component<CameraProps, CameraState> {
   expoCameraRef = React.createRef<Camera>()
 
   async componentDidMount(): Promise<void> {
-    const { status } = await Camera.requestPermissionsAsync()
+    const permission = await Camera.requestCameraPermissionsAsync()
     this.setState({
-      hasPermission: status === PermissionStatus.GRANTED
+      hasPermission: permission?.status === PermissionStatus.GRANTED,
     })
   }
 
@@ -35,18 +35,20 @@ export class _Camera extends Component<CameraProps, CameraState> {
 
   onScanCode = (event: BarCodeScanningResult): void => {
     const { data } = event
-    this.props.onScanCode && this.props.onScanCode({
-      detail: {
-        result: data
-      },
-      ...event
-    } as any)
+    this.props.onScanCode &&
+      this.props.onScanCode({
+        detail: {
+          result: data,
+        },
+        ...event,
+      } as any)
   }
 
   render(): JSX.Element {
     const { hasPermission } = this.state
     const { devicePosition, style, mode, flash } = this.props
-    const type = !devicePosition ? null : Camera.Constants.Type[devicePosition]
+    const type = !devicePosition ? CameraType.front : CameraType[devicePosition]
+
     if (hasPermission === null) {
       return <View />
     }
@@ -57,20 +59,18 @@ export class _Camera extends Component<CameraProps, CameraState> {
       mode === 'scanCode'
         ? {
           barCodeScannerSettings: {
-            barCodeTypes: [BarCodeScanner.Constants.BarCodeType.qr]
+            barCodeTypes: ['qr'],
           },
-          onBarCodeScanned: this.onScanCode
+          onBarCodeScanned: this.onScanCode,
         }
         : {}
     return (
       <Camera
         ref={this.expoCameraRef}
-        // @ts-ignore
         type={type}
         flashMode={flash}
         onMountError={this.onError}
         onCameraReady={this.onInitDone}
-        ratio={this.props.ratio}
         {...barCodeScannerSettings}
         style={[styles.camera, style]}
       />

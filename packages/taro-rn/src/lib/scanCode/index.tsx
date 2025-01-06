@@ -1,13 +1,13 @@
-import { SafeAreaView } from 'react-native-safe-area-context'
+import { BarCodeScanner, requestPermissionsAsync } from 'expo-barcode-scanner'
 import { Camera } from 'expo-camera'
-import { BarCodeScanner } from 'expo-barcode-scanner'
-import { BackHandler, Image, TouchableOpacity, StyleSheet, View, Dimensions, Platform } from 'react-native'
+import React from 'react'
+import { BackHandler, Dimensions, Image, Platform, StatusBar, StyleSheet, TouchableOpacity, View } from 'react-native'
+import RootSiblings from 'react-native-root-siblings'
+import { initialWindowMetrics } from 'react-native-safe-area-context'
+
+import { chooseMedia, MEDIA_TYPE } from '../media'
 import iconClose from './icon_close.png'
 import iconPic from './icon_pic.png'
-import * as Permissions from 'expo-permissions'
-import RootSiblings from 'react-native-root-siblings'
-import { chooseMedia, MEDIA_TYPE } from '../media'
-import React from 'react'
 
 export let scannerView
 
@@ -46,15 +46,17 @@ function findKey (value:string, data, compare = (a, b) => a === b):string {
   return Object.keys(data).find(k => compare(data[k], value)) || ''
 }
 
-const { width, height } = Dimensions.get('window')
+const { width, height } = Dimensions.get('screen')
 
-function getBarCodeTypes(types:string[]):string[] {
-  const result:string[] = []
+function getBarCodeTypes(types:string[]): string[] {
+  const result: string[] = []
+
   for (const t of types) {
     result.push(...typeMap[t].map(type => {
       return BarCodeType[type]
     }))
   }
+
   return result.filter(r => !!r)
 }
 
@@ -64,7 +66,9 @@ function formatCodeType(type:string):keyof Taro.scanCode.QRType {
 
 function safeViewWrapper(element:any) {
   if (Platform.OS === 'ios') {
-    return <SafeAreaView>{element}</SafeAreaView>
+    return <View style={{
+      paddingTop: Math.max(initialWindowMetrics?.insets.top || 0, 20),
+    }}>{element}</View>
   }
   return element
 }
@@ -101,6 +105,7 @@ const styles = StyleSheet.create({
   closeImg: {
     width: 25,
     height: 25,
+    marginTop: StatusBar.currentHeight,
   },
   closeBtnBg: {
     width: 40,
@@ -141,13 +146,13 @@ function scanFromPhoto(callback, errorCallBack) {
         })
       }
     }
-  }, MEDIA_TYPE.IMAGES).catch(errorCallBack)
+  }, MEDIA_TYPE.Images).catch(errorCallBack)
 }
 
 export async function scanCode(option: Taro.scanCode.Option = {}): Promise<Taro.scanCode.SuccessCallbackResult> {
   const { success, fail, complete, onlyFromCamera, scanType = ['barCode', 'qrCode'] } = option
-  const { status } = await Permissions.askAsync(Permissions.CAMERA)
-  if (status !== 'granted') {
+  const { granted } = await requestPermissionsAsync()
+  if (!granted) {
     const res = { errMsg: 'Permissions denied!' }
     fail?.(res)
     complete?.(res)
@@ -157,58 +162,58 @@ export async function scanCode(option: Taro.scanCode.Option = {}): Promise<Taro.
   return new Promise((resolve, reject) => {
     scannerView = new RootSiblings(
       (<View style={[styles.container]}>
-          <Camera
-              onBarCodeScanned={({ type, data }: {type: string, data: string}) => {
-                const res = {
-                  charSet: 'UTF-8', // todo
-                  path: '', // todo
-                  rawData: '', // todo
-                  errMsg: 'scanCode:ok',
-                  result: data,
-                  scanType: formatCodeType(type),
-                }
-                success?.(res)
-                complete?.(res)
-                hide(scannerView)
-                resolve(res)
-              }}
-              barCodeScannerSettings={{
-                barCodeTypes,
-              }}
-              style={{ width, height }}
-              ratio='16:9'
-          />
-          <TouchableOpacity style={styles.closeIcon} onPress={() => hide(scannerView)}>
-            {safeViewWrapper(<Image source={iconClose} style={styles.closeImg}/>)}
-          </TouchableOpacity>
-          {!onlyFromCamera && (<TouchableOpacity style={styles.albumIcon} onPress={() => {
-            scanFromPhoto((data, type) => {
-              const res = {
-                charSet: 'UTF-8', // todo
-                path: '', // todo
-                rawData: '', // todo
-                errMsg: 'scanCode:ok',
-                result: data,
-                scanType: formatCodeType(type),
-              }
-              success?.(res)
-              complete?.(res)
-              hide(scannerView)
-              resolve(res)
-            }, (err) => {
-              const res = {
-                errMsg: 'scanCode fail',
-                err
-              }
-              fail?.(res)
-              complete?.(res)
-              hide(scannerView)
-              reject(res)
-            })
-          }}>
-            {safeViewWrapper(<Image source={iconPic} style={styles.albumImg}/>)}
-          </TouchableOpacity>)}
-        </View>)
+        <StatusBar backgroundColor="rgba(0, 0, 0, 0)" translucent hidden={Platform.OS === 'ios'} />
+        <Camera
+          onBarCodeScanned={({ type, data }: {type: string, data: string}) => {
+            const res = {
+              charSet: 'UTF-8', // todo
+              path: '', // todo
+              rawData: '', // todo
+              errMsg: 'scanCode:ok',
+              result: data,
+              scanType: formatCodeType(type),
+            }
+            success?.(res)
+            complete?.(res)
+            hide(scannerView)
+            resolve(res)
+          }}
+          barCodeScannerSettings={{
+            barCodeTypes,
+          }}
+          style={{ width, height }}
+        />
+        <TouchableOpacity accessibilityLabel="Close" style={styles.closeIcon} onPress={() => hide(scannerView)}>
+          {safeViewWrapper(<Image source={iconClose} style={styles.closeImg}/>)}
+        </TouchableOpacity>
+        {!onlyFromCamera && (<TouchableOpacity style={styles.albumIcon} onPress={() => {
+          scanFromPhoto((data, type) => {
+            const res = {
+              charSet: 'UTF-8', // todo
+              path: '', // todo
+              rawData: '', // todo
+              errMsg: 'scanCode:ok',
+              result: data,
+              scanType: formatCodeType(type),
+            }
+            success?.(res)
+            complete?.(res)
+            hide(scannerView)
+            resolve(res)
+          }, (err) => {
+            const res = {
+              errMsg: 'scanCode fail',
+              err
+            }
+            fail?.(res)
+            complete?.(res)
+            hide(scannerView)
+            reject(res)
+          })
+        }}>
+          {safeViewWrapper(<Image source={iconPic} style={styles.albumImg}/>)}
+        </TouchableOpacity>)}
+      </View>)
     )
     BackHandler.addEventListener('hardwareBackPress', backAction)
   })

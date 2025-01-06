@@ -1,11 +1,12 @@
 
 import * as React from 'react'
-import { FlatList, NativeSyntheticEvent, NativeScrollEvent, ListRenderItemInfo } from 'react-native'
-import { noop } from '../../utils'
-import { VirtualListProps } from './PropsType'
-import { ScrollViewProps } from '../ScrollView/PropsType'
+import { FlatList, ListRenderItemInfo, NativeScrollEvent, NativeSyntheticEvent } from 'react-native'
 
-class _VirtualList extends React.Component<VirtualListProps<any> & ScrollViewProps<any>, any> {
+import { noop } from '../../utils'
+import { ScrollViewProps } from '../ScrollView/PropsType'
+import { VirtualListProps } from './PropsType'
+
+class _VirtualList extends React.Component<VirtualListProps & ScrollViewProps<any>, any> {
   static defaultProps = {
     upperThreshold: 50,
     lowerThreshold: 50,
@@ -61,15 +62,16 @@ class _VirtualList extends React.Component<VirtualListProps<any> & ScrollViewPro
   }
 
   render(): JSX.Element {
-    const { itemData, itemSize, layout, overscanCount, children, ...restProps } = this.props
+    const { itemData, itemSize, item, layout, overscanCount, children, ...restProps } = this.props
     const itemStyle = layout === 'vertical' ? { height: itemSize } : { width: itemSize }
     // 这边用any是因为any值的是item的类型，取决于用户传入进来的内容，可能是string或jsx.element
-    const itemRow = ({ item, index, separators }: ListRenderItemInfo<any>) =>
-      React.createElement(children, {
+    const itemCom = item || children
+    const itemRow = ({ item: _item, index, separators }: ListRenderItemInfo<any>) =>
+      React.createElement(itemCom, {
         data: itemData,
         key: index,
         index,
-        item,
+        item: _item,
         separators,
         style: {
           ...itemStyle
@@ -77,6 +79,7 @@ class _VirtualList extends React.Component<VirtualListProps<any> & ScrollViewPro
       })
     return (
       <FlatList
+        scrollEventThrottle={50}
         {...restProps}
         data={itemData}
         windowSize={overscanCount}

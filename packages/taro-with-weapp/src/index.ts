@@ -1,16 +1,19 @@
-import { ComponentLifecycle, eventCenter, nextTick } from '@tarojs/taro'
 import { getCurrentInstance } from '@tarojs/runtime'
-import { lifecycles, lifecycleMap, TaroLifeCycles, uniquePageLifecycle, appOptions } from './lifecycle'
-import { bind, isEqual, safeGet, safeSet, report, unsupport, flattenBehaviors } from './utils'
-import { diff } from './diff'
+import { ComponentLifecycle, createIntersectionObserver, createMediaQueryObserver, createSelectorQuery, eventCenter, nextTick } from '@tarojs/taro'
+
 import { clone } from './clone'
+import { diff } from './diff'
+import { appOptions, lifecycleMap, lifecycles, TaroLifeCycles, uniquePageLifecycle } from './lifecycle'
+import { bind, flattenBehaviors, isEqual, nonsupport, report, safeGet, safeSet } from './utils'
+
+import type { Func } from '@tarojs/taro/types/compile'
 
 type Observer = (newProps, oldProps, changePath: string) => void
-type Func = (...args: any[]) => void
 
 interface ObserverProperties {
-  name: string,
-  observer: string | Observer
+  name: string
+  observers: (string | Observer)[]
+  // observer: string | Observer
 }
 
 interface ComponentClass<P = Record<string, any>, S = Record<string, any>> extends ComponentLifecycle<P, S> {
@@ -22,15 +25,14 @@ interface ComponentClass<P = Record<string, any>, S = Record<string, any>> exten
 }
 
 interface WxOptions {
-  methods?: {
-    [key: string]: Func;
-  }
+  methods?: Record<string, Func>
   properties?: Record<string, Record<string, unknown> | Func>
   props?: Record<string, unknown>
-  data?: Record<string, unknown>,
+  data?: Record<string, unknown>
   observers?: Record<string, Func>
   lifetimes?: Record<string, Func>
   behaviors?: any[]
+  computed?: Record<string, Func>
 }
 
 function defineGetter (component, key: string, getter: string) {
@@ -41,12 +43,17 @@ function defineGetter (component, key: string, getter: string) {
       if (getter === 'props') {
         return component.props
       }
-      return {
-        ...component.state,
-        ...component.props
-      }
+      return component.state
+      // return {
+      //   ...component.state,
+      //   ...component.props
+      // }
     }
   })
+}
+
+function propToState (newValue, _oldValue, key: string) {
+  this.state[key] = newValue
 }
 
 function isFunction (o): o is Func {
@@ -65,7 +72,8 @@ export default function withWeapp (weappConf: WxOptions, isApp = false) {
       ['created', []],
       ['attached', []],
       ['ready', []],
-      ['detached', []]
+      ['detached', []],
+      ['lifetimes', []]
     ])
     const behaviorProperties = {}
     if (weappConf.behaviors?.length) {
@@ -92,7 +100,7 @@ export default function withWeapp (weappConf: WxOptions, isApp = false) {
       }
     }
 
-    class BaseComponent<P = Record<string, any>, S = Record<string, any>> extends ConnectComponent {
+    class BaseComponent<P = Record<string, any>, S extends Record<string, any> = Record<string, any>> extends ConnectComponent {
       private _observeProps: ObserverProperties[] = []
 
       // mixins 可以多次调用生命周期
@@ -106,7 +114,7 @@ export default function withWeapp (weappConf: WxOptions, isApp = false) {
 
       private willUnmounts: Func[] = []
 
-      private eventDistoryList: Func[] = []
+      private eventDestroyList: Func[] = []
 
       private current: any = getCurrentInstance()
 
@@ -122,22 +130,47 @@ export default function withWeapp (weappConf: WxOptions, isApp = false) {
         this.init(weappConf)
         defineGetter(this, 'data', 'state')
         defineGetter(this, 'properties', 'props')
+        this.initComputed(weappConf)
       }
 
       private initProps (props: any) {
+        const properties = {}
         for (const propKey in props) {
           if (props.hasOwnProperty(propKey)) {
             const propValue = props[propKey]
             // propValue 可能是 null, 构造函数, 对象
-            if (propValue && !isFunction(propValue)) {
-              if (propValue.observer) {
-                this._observeProps.push({
-                  name: propKey,
-                  observer: propValue.observer
-                })
+            const observers = [propToState]
+            if (propValue === null || propValue === undefined) { // propValue为null、undefined情况
+              properties[propKey] = null
+            } else if (isFunction(propValue)) { // propValue为Function，即Array、String、Boolean等情况时
+              if (propValue.name === 'Array') {
+                properties[propKey] = []
+              } else if (propValue.name === 'String') {
+                properties[propKey] = ''
+              } else if (propValue.name === 'Boolean') {
+                properties[propKey] = false
+              } else if (propValue.name === 'Number') {
+                properties[propKey] = 0
+              } else {
+                properties[propKey] = null
               }
+            } else if (typeof propValue === 'object') { // propValue为对象时
+              properties[propKey] = propValue.value
+              if (propValue.observer) {
+                observers.push(propValue.observer)
+              }
+            } else {
+              properties[propKey] = null
             }
+            this._observeProps.push({
+              name: propKey,
+              observers: observers
+            })
           }
+        }
+        this.state = {
+          ...properties,
+          ...this.state
         }
       }
 
@@ -158,8 +191,8 @@ export default function withWeapp (weappConf: WxOptions, isApp = false) {
 
         for (const confKey in options) {
           // 不支持的属性
-          if (unsupport.has(confKey)) {
-            const advise = unsupport.get(confKey)
+          if (nonsupport.has(confKey)) {
+            const advise = nonsupport.get(confKey)
             report(advise)
           }
 
@@ -186,6 +219,7 @@ export default function withWeapp (weappConf: WxOptions, isApp = false) {
               this.initProps(Object.assign(behaviorProperties, confValue))
               break
             case 'methods':
+              this.methods = confValue
               for (const key in confValue) {
                 const method = confValue[key]
                 this[key] = bind(method, this)
@@ -287,6 +321,13 @@ export default function withWeapp (weappConf: WxOptions, isApp = false) {
                   }
                 })
                 break
+              case 'lifetimes':
+                list.forEach(lifetimesObject => {
+                  for (const key in lifetimesObject) {
+                    this.initLifeCycles(key, lifetimesObject[key])
+                  }
+                })
+                break
               default:
                 break
             }
@@ -294,10 +335,32 @@ export default function withWeapp (weappConf: WxOptions, isApp = false) {
         }
       }
 
-      private initLifeCycles (lifecycleName: string, lifecycle: (...args: any[]) => any) {
+      private initComputed (weappConf) {
+        // 处理 computed
+        if (weappConf.computed) {
+          const computed = weappConf.computed
+          for (const key in computed) {
+            const getter = computed[key]
+            if (isFunction(getter)) {
+              Object.defineProperty(this.data, key, {
+                get: () => {
+                  // 每次访问 this.object.data[name] 时，都执行 computed[name]()
+                  return getter.call({ ...this.state, ...this.methods })
+                },
+                enumerable: true, // 这将确保属性是可枚举的，如果你希望它出现在 for...in 循环中
+                configurable: true // 这将确保属性是可配置的，比如可以被删除
+              })
+            } else {
+              report('computed 属性值必须是函数。')
+            }
+          }
+        }
+      }
+
+      private initLifeCycles (lifecycleName: string, lifecycle: Func) {
         // 不支持的生命周期
-        if (unsupport.has(lifecycleName)) {
-          const advise = unsupport.get(lifecycleName)
+        if (nonsupport.has(lifecycleName)) {
+          const advise = nonsupport.get(lifecycleName)
           return report(advise)
         }
 
@@ -358,7 +421,7 @@ export default function withWeapp (weappConf: WxOptions, isApp = false) {
         cb = cb.bind(this)
         router?.[lifecycleName] && eventCenter.on(router[lifecycleName], cb)
         // unMount 时需要取消事件监听
-        this.eventDistoryList.push(() => eventCenter.off(router[lifecycleName], cb))
+        this.eventDestroyList.push(() => eventCenter.off(router[lifecycleName], cb))
       }
 
       private executeLifeCycles (funcs: Func[], ...args: unknown[]) {
@@ -369,19 +432,21 @@ export default function withWeapp (weappConf: WxOptions, isApp = false) {
       }
 
       private triggerPropertiesObservers (prevProps, nextProps) {
-        this._observeProps.forEach(({ name: key, observer }) => {
+        this._observeProps.forEach(({ name: key, observers }) => {
           const prop = prevProps?.[key]
           const nextProp = nextProps[key]
           // 小程序是深比较不同之后才 trigger observer
           if (!isEqual(prop, nextProp)) {
-            if (typeof observer === 'string') {
-              const ob = this[observer]
-              if (isFunction(ob)) {
-                ob.call(this, nextProp, prop, key)
+            observers.forEach((observer) => {
+              if (typeof observer === 'string') {
+                const ob = this[observer]
+                if (isFunction(ob)) {
+                  ob.call(this, nextProp, prop, key)
+                }
+              } else if (isFunction(observer)) {
+                observer.call(this, nextProp, prop, key)
               }
-            } else if (isFunction(observer)) {
-              observer.call(this, nextProp, prop, key)
-            }
+            })
           }
         })
       }
@@ -473,7 +538,7 @@ export default function withWeapp (weappConf: WxOptions, isApp = false) {
       }
 
       public componentWillUnmount () {
-        this.eventDistoryList.forEach(fn => fn())
+        this.eventDestroyList.forEach(fn => fn())
         this.safeExecute(super.componentWillUnmount)
         this.executeLifeCycles(this.willUnmounts)
       }
@@ -529,6 +594,13 @@ export default function withWeapp (weappConf: WxOptions, isApp = false) {
           report('triggerEvent 不支持事件选项。')
         }
 
+        // eventName support kebab case
+        if (eventName.match(/[a-z]+-[a-z]+/g)) {
+          eventName = eventName.replace(/-[a-z]/g, function (match) {
+            return match[1].toUpperCase()
+          })
+        }
+
         const props = this.props
         const dataset = {}
         for (const key in props) {
@@ -558,6 +630,13 @@ export default function withWeapp (weappConf: WxOptions, isApp = false) {
           const page = this.current.page
           if (page?.[method]) {
             return page[method](...args)
+          } else if (method === 'createSelectorQuery') {
+            return createSelectorQuery()
+          } else if (method === 'createIntersectionObserver') {
+            // @ts-ignore
+            return createIntersectionObserver(...args)
+          } else if (method === 'createMediaQueryObserver') {
+            return createMediaQueryObserver()
           } else {
             console.error(`page 下没有 ${method} 方法`)
           }
@@ -576,19 +655,19 @@ export default function withWeapp (weappConf: WxOptions, isApp = false) {
       public setUpdatePerformanceListener = this.componentMethodsProxy('setUpdatePerformanceListener')
 
       public selectComponent () {
-        report(unsupport.get('selectComponent'))
+        report(nonsupport.get('selectComponent'))
       }
 
       public selectAllComponents () {
-        report(unsupport.get('selectAllComponents'))
+        report(nonsupport.get('selectAllComponents'))
       }
 
       public selectOwnerComponent () {
-        report(unsupport.get('selectOwnerComponent'))
+        report(nonsupport.get('selectOwnerComponent'))
       }
 
       public groupSetData () {
-        report(unsupport.get('groupSetData'))
+        report(nonsupport.get('groupSetData'))
       }
     }
 
@@ -620,3 +699,5 @@ export default function withWeapp (weappConf: WxOptions, isApp = false) {
     return BaseComponent
   }
 }
+
+export * from './convert-tools'

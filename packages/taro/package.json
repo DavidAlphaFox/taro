@@ -1,21 +1,17 @@
 {
   "name": "@tarojs/taro",
-  "version": "3.3.15",
+  "version": "4.0.9-beta.2",
   "description": "Taro framework",
-  "homepage": "https://github.com/nervjs/taro/tree/master/packages/taro#readme",
+  "author": "O2Team",
+  "license": "MIT",
   "main": "index.js",
-  "main:h5": "h5.js",
   "typings": "types/index.d.ts",
   "files": [
     "index.js",
-    "h5.js",
     "types",
     "html.css",
     "html5.css"
   ],
-  "scripts": {
-    "test": "echo \"Error: run tests from root\" && exit 1"
-  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/NervJS/taro.git"
@@ -23,11 +19,60 @@
   "keywords": [
     "taro"
   ],
-  "author": "O2Team",
-  "license": "MIT",
+  "engines": {
+    "node": ">= 18"
+  },
   "dependencies": {
-    "@tarojs/api": "3.3.15",
-    "@tarojs/runtime": "3.3.15",
-    "@tarojs/taro-h5": "3.3.15"
+    "@tarojs/api": "workspace:*",
+    "@tarojs/runtime": "workspace:*",
+    "@types/postcss-url": "^10.0.4"
+  },
+  "devDependencies": {
+    "@tarojs/components": "workspace:*",
+    "@tarojs/helper": "workspace:*",
+    "@tarojs/shared": "workspace:*",
+    "@types/react": "^18.3.1",
+    "html-webpack-plugin": "^5.6.0",
+    "postcss": "^8.4.38",
+    "webpack": "5.91.0",
+    "webpack-chain": "^6.5.1",
+    "webpack-dev-server": "^4.15.2",
+    "rollup": "^3.29.4"
+  },
+  "peerDependencies": {
+    "@tarojs/components": "workspace:*",
+    "@tarojs/helper": "workspace:*",
+    "@tarojs/shared": "workspace:*",
+    "@types/react": "^18",
+    "html-webpack-plugin": "^5",
+    "rollup": "^3",
+    "postcss": "^8",
+    "vue": "^3",
+    "webpack": "^5",
+    "webpack-chain": "^6",
+    "webpack-dev-server": "^4"
+  },
+  "peerDependenciesMeta": {
+    "@types/react": {
+      "optional": true
+    },
+    "html-webpack-plugin": {
+      "optional": true
+    },
+    "rollup": {
+      "optional": true
+    },
+    "vue": {
+      "optional": true
+    },
+    "webpack": {
+      "optional": true
+    },
+    "webpack-chain": {
+      "optional": true
+    },
+    "webpack-dev-server": {
+      "optional": true
+    }
   }
 }

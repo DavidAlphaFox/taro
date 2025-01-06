@@ -24,13 +24,15 @@
 
 import * as React from 'react'
 import {
-  View,
-  Text,
   Animated,
+  DimensionValue,
   Easing,
+  Text,
+  View,
 } from 'react-native'
-import styles from './styles'
+
 import { ProgressProps, ProgressState } from './PropsType'
+import styles from './styles'
 
 export default class _Progress extends React.Component<ProgressProps, ProgressState> {
   static defaultProps = {
@@ -94,11 +96,11 @@ export default class _Progress extends React.Component<ProgressProps, ProgressSt
     this.animate()
   }
 
-  getSnapshotBeforeUpdate(prevProps: ProgressProps, prevState: ProgressState): boolean {
+  getSnapshotBeforeUpdate(_prevProps: ProgressProps, prevState: ProgressState): boolean {
     return prevState.percent !== this.state.percent
   }
 
-  componentDidUpdate(prevProps: ProgressProps, prevState: ProgressState, snapshot: boolean): void {
+  componentDidUpdate(_prevProps: ProgressProps, _prevState: ProgressState, snapshot: boolean): void {
     if (snapshot) {
       this.animate()
     }
@@ -125,7 +127,7 @@ export default class _Progress extends React.Component<ProgressProps, ProgressSt
         <View
           style={[
             styles.bar, {
-              height: strokeWidth,
+              height: strokeWidth as (DimensionValue | undefined),
               backgroundColor
             }
           ]}

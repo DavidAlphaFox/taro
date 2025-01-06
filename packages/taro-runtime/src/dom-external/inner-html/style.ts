@@ -1,7 +1,6 @@
 import { NodeType } from '../../dom/node_types'
 import { unquote } from './utils'
 
-import type { TaroNode } from '../../dom/node'
 import type { ParsedTaroElement } from './parser'
 
 const LEFT_BRACKET = '{'
@@ -32,7 +31,7 @@ interface IStyle {
 }
 
 export default class StyleTagParser {
-  styles: IStyle[]= []
+  styles: IStyle[] = []
 
   extractStyle (src: string) {
     const REG_STYLE = /<style\s?[^>]*>((.|\n|\s)+?)<\/style>/g
@@ -80,8 +79,12 @@ export default class StyleTagParser {
   }
 
   parseSelector (src: string) {
-    // todo: 属性选择器里可以带空格：[a = "b"]，这里的 split(' ') 需要作兼容
-    const list = src.trim().replace(/ *([>~+]) */g, ' $1').replace(/ +/g, ' ').split(' ')
+    const list = src
+      .trim()
+      .replace(/ *([>~+]) */g, ' $1')
+      .replace(/ +/g, ' ')
+      .replace(/\[\s*([^[\]=\s]+)\s*=\s*([^[\]=\s]+)\s*\]/g, '[$1=$2]')
+      .split(' ')
     const selectors = list.map(item => {
       const firstChar = item.charAt(0)
       const selector: ISelector = {
@@ -146,7 +149,7 @@ export default class StyleTagParser {
       let isMatch = this.matchCurrent(tagName, el, selector)
 
       if (isMatch && selector.isGeneralSibling) {
-        let prev: ParsedTaroElement = getPreviousElement(el)
+        let prev: ParsedTaroElement | null = getPreviousElement(el)
         while (prev) {
           if (prev.h5tagName && this.matchCurrent(prev.h5tagName, prev, selectorList[idx - 1])) {
             isMatch = true
@@ -157,7 +160,7 @@ export default class StyleTagParser {
         }
       }
       if (isMatch && selector.isAdjacentSibling) {
-        const prev: ParsedTaroElement = getPreviousElement(el)
+        const prev: ParsedTaroElement | null = getPreviousElement(el)
         if (!prev || !prev.h5tagName) {
           isMatch = false
         } else {
@@ -226,11 +229,11 @@ export default class StyleTagParser {
   }
 }
 
-function getPreviousElement (el: TaroNode) {
+function getPreviousElement (el: ParsedTaroElement): ParsedTaroElement | null {
   const parent = el.parentElement
   if (!parent) return null
 
-  const prev = el.previousSibling
+  const prev = el.previousSibling as ParsedTaroElement
   if (!prev) return null
 
   if (prev.nodeType === NodeType.ELEMENT_NODE) {

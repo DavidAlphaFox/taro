@@ -17,8 +17,9 @@ export namespace SpecialMaps {
 
 function genAttrMapFnFromDir (dir: Record<string, string | [string, Record<string, any>]>): SpecialMaps.MapAttrFn {
   const fn: SpecialMaps.MapAttrFn = function (key, value) {
-    if (key.toLowerCase() in dir) {
-      const res = dir[key]
+    const lowerKey = key.toLowerCase()
+    if (lowerKey in dir) {
+      const res = dir[lowerKey]
       if (isString(res)) {
         key = res
       } else {
@@ -43,6 +44,7 @@ export const specialElements = new Map<string, string | SpecialMaps>([
   ['canvas', 'canvas'],
   ['a', {
     mapName (props) {
+      if (props.as && isString(props.as)) return props.as.toLowerCase()
       return !props.href || (/^javascript/.test(props.href)) ? 'view' : 'navigator'
     },
     mapNameCondition: ['href'],
@@ -80,6 +82,8 @@ export const specialElements = new Map<string, string | SpecialMaps>([
         } else if (value === 'tel') {
           value = 'number'
         }
+      } else if (htmlKey === 'maxlength') {
+        key = 'maxlength'
       }
       return [key, value]
     }
@@ -94,7 +98,8 @@ export const specialElements = new Map<string, string | SpecialMaps>([
     mapName: 'textarea',
     mapAttr: genAttrMapFnFromDir({
       autofocus: 'focus',
-      readonly: 'disabled'
+      readonly: 'disabled',
+      maxlength: 'maxlength'
     })
   }],
   ['progress', {

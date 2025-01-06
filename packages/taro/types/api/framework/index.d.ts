@@ -3,10 +3,11 @@ import Taro from '../../index'
 declare module '../../index' {
   /** 注册小程序中的一个页面。接受一个 `Object` 类型参数，其指定页面的初始数据、生命周期回调、事件处理函数等。 */
   interface Page {
-    /**
-     * 当前页面的路径
+    /** 当前页面的路径
+     * @note 推荐使用 Taro.getCurrentInstance().router?.path 方法
      */
-    route: string
+    route?: string
+    __route__?: string
     /** @ignore */
     [k: string]: any
   }
@@ -32,7 +33,7 @@ declare module '../../index' {
      * __注意：__
      * - __不要尝试修改页面栈，会导致路由以及页面状态错误。__
      * - 不要在 `App.onLaunch` 的时候调用 `getCurrentPages()`，此时 `page` 还没有生成。
-     * @supported weapp, h5
+     * @supported weapp, h5, rn, tt, harmony_hybrid
      * @example
      * ```tsx
      * Taro.getCurrentPages().length
@@ -42,7 +43,7 @@ declare module '../../index' {
     getCurrentPages(): Page[]
 
     /** 获取到小程序全局唯一的 App 实例。
-     * @supported weapp, alipay, h5, rn, jd, qq, swan, tt, quickapp
+     * @supported weapp, alipay, h5, rn, jd, qq, swan, tt, quickapp, harmony_hybrid
      * @see https://developers.weixin.qq.com/miniprogram/dev/reference/api/getApp.html
      */
     getApp<T = TaroGeneral.IAnyObject>(opts?: getApp.Option): getApp.Instance<T>

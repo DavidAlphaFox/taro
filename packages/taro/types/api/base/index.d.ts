@@ -3,7 +3,7 @@ import Taro from '../../index'
 declare module '../../index' {
   interface TaroStatic {
     /** 判断小程序的 API，回调，参数，组件等是否在当前版本可用。
-     * @supported weapp
+     * @supported weapp, tt, h5, harmony_hybrid
      * @example
      * ```tsx
      * Taro.canIUse('openBluetoothAdapter')
@@ -35,9 +35,16 @@ declare module '../../index' {
       schema: string
     ): boolean
 
+    /** 判断能否使用 WebP 格式
+     *
+     * > 在小程序平台中仅在 android 和 devtools 设备时可用
+     * @supported global
+     */
+    canIUseWebp(): boolean
+
     /**
      * 将 Base64 字符串转成 ArrayBuffer 数据。
-     * @supported weapp, h5
+     * @supported weapp, h5, rn, tt, harmony_hybrid
      * @example
      * ```tsx
      * const base64 = 'CxYh'
@@ -52,7 +59,7 @@ declare module '../../index' {
 
     /**
      * 将 ArrayBuffer 数据转成 Base64 字符串。
-     * @supported weapp, h5
+     * @supported weapp, h5, rn, tt, harmony_hybrid
      * @example
      * ```tsx
      * const arrayBuffer = new Uint8Array([11, 22, 33])
@@ -88,6 +95,7 @@ declare module '../../index' {
 
     /**
      * 预加载的数据
+     * @ignore
      */
     preloadData: Record<string, any>
   }

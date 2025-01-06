@@ -1,21 +1,15 @@
-import path from 'path'
-import { sync as resolveSync } from 'resolve'
-import postcss, { ProcessOptions } from 'postcss'
-import pxtransform from 'postcss-pxtransform'
+import * as path from 'node:path'
+
+import { isNpmPkg, printLog, processTypeEnum, recursiveMerge, resolveSync } from '@tarojs/helper'
+import postcss from 'postcss'
+import postcssCssVariables from 'postcss-css-variables'
 import postcssImport from 'postcss-import'
-import { recursiveMerge, isNpmPkg, printLog, processTypeEnum } from '@tarojs/helper'
+import pxtransform from 'postcss-pxtransform'
+import stylelint from 'stylelint'
+
+import stylelintConfig from '../config/rn-stylelint.json'
 import { resolveStyle } from '../utils'
 import reporterSkip from '../utils/reporterSkip'
-import stylelintConfig from '../config/rn-stylelint.json'
-
-export interface Config {
-  options: ProcessOptions; // https://github.com/postcss/postcss#options
-  scalable: boolean; // 控制是否对 css value 进行 scalePx2dp 转换
-  pxtransform: {
-    enable: boolean;
-    config: any;
-  };
-}
 
 const defaultPxtransformOption: {
   [key: string]: any
@@ -26,6 +20,13 @@ const defaultPxtransformOption: {
   }
 }
 
+const defaultPostcssCssVariablesOption: {
+  [key: string]: any
+} = {
+  enable: true,
+  config: {}
+}
+
 export function makePostcssPlugins ({
   filename,
   designWidth,
@@ -34,7 +35,7 @@ export function makePostcssPlugins ({
   transformOptions,
   additionalData
 }) {
-  const optionsWithDefaults = ['pxtransform', 'postcss-import', 'postcss-reporter', 'stylelint', 'cssModules']
+  const optionsWithDefaults = ['pxtransform', 'postcss-import', 'postcss-reporter', 'stylelint', 'cssModules', 'postcss-css-variables']
 
   if (designWidth) {
     defaultPxtransformOption.config.designWidth = designWidth
@@ -44,6 +45,7 @@ export function makePostcssPlugins ({
     defaultPxtransformOption.config.deviceRatio = deviceRatio
   }
   const pxtransformOption = recursiveMerge({}, defaultPxtransformOption, postcssConfig.pxtransform)
+  const postcssCssVariablesOption = recursiveMerge({}, defaultPostcssCssVariablesOption, postcssConfig['postcss-css-variables'])
 
   const plugins = [
     postcssImport({
@@ -63,13 +65,20 @@ export function makePostcssPlugins ({
   ]
 
   if (pxtransformOption.enable) {
+    // @ts-ignore
     plugins.push(pxtransform(pxtransformOption.config))
+  }
+
+  if (postcssCssVariablesOption.enable) {
+    plugins.push(postcssCssVariables(postcssCssVariablesOption.config))
   }
 
   const skipRows = additionalData ? additionalData.split('\n').length : 0
 
   plugins.push(
-    require('stylelint')(stylelintConfig),
+    // @ts-ignore
+    stylelint(stylelintConfig),
+    // @ts-ignore
     reporterSkip({ skipRows, filename }),
     require('postcss-reporter')({ clearReportedMessages: true })
   )
@@ -83,7 +92,7 @@ export function makePostcssPlugins ({
     }
 
     try {
-      const pluginPath = resolveSync(pluginName, { basedir: process.cwd() })
+      const pluginPath = resolveSync(pluginName, { basedir: process.cwd() }) || ''
       plugins.push(require(pluginPath)((pluginOption as any).config || {}))
     } catch (e) {
       const msg = e.code === 'MODULE_NOT_FOUND' ? `缺少postcss插件${pluginName}, 已忽略` : e

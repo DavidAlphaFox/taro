@@ -1,5 +1,7 @@
-import path from 'path'
+import path from 'node:path'
+
 import { recursiveMerge } from '@tarojs/helper'
+import { describe, expect, test } from 'vitest'
 
 import StyleTransform, { getWrapedCSS } from '../src/transforms'
 
@@ -35,34 +37,33 @@ const defaultConfig = {
 }
 
 async function run (src, filename = './__tests__/styles/a.css', debug) {
-  let options
+  let options = { platform: 'android' }
   let config
 
   if (typeof src === 'object') {
     ({
       src,
       filename = './__tests__/styles/a.css',
-      options,
+      options = { platform: 'android' },
       debug,
       config
     } = src || {})
   }
 
   const mergeConfig = recursiveMerge({}, defaultConfig, config)
-  // console.log('mergeConfig', JSON.stringify(mergeConfig, null, '  '))
   const styleTransform = new StyleTransform(mergeConfig)
   const css = await styleTransform.transform(src, filename, options)
+
   if (debug) {
-    // eslint-disable-next-line
     console.log(filename + ' source: ', src)
-    // eslint-disable-next-line
     console.log(filename + ' target: ', css)
   }
+
   return css
 }
 
 describe('style transform with config options', () => {
-  it('config.sass option', async () => {
+  test('config.sass option', async () => {
     const css = await run({
       src: `
         .test {
@@ -96,7 +97,7 @@ describe('style transform with config options', () => {
 }`))
   })
 
-  it('config.sass option without projectDirectory', async () => {
+  test('config.sass option without projectDirectory', async () => {
     const css = await run({
       src: `
         .test {
@@ -130,7 +131,7 @@ describe('style transform with config options', () => {
 }`))
   })
 
-  it('config.postcss disable pxTransform', async () => {
+  test('config.postcss disable pxTransform', async () => {
     const css = await run(`
       .test {
         height: 10px;
@@ -143,7 +144,7 @@ describe('style transform with config options', () => {
 }`))
   })
 
-  it('config.postcss disable scalePx2dp', async () => {
+  test('config.postcss disable scalePx2dp', async () => {
     const config = {
       rn: {
         postcss: {
@@ -168,7 +169,8 @@ describe('style transform with config options', () => {
   }
 }`))
   })
-  it('config.alias in css', async () => {
+
+  test('config.alias in css', async () => {
     const css = await run("@import '@/b.css';")
     expect(css).toEqual(getWrapedCSS(`{
   "brn": {
@@ -177,7 +179,7 @@ describe('style transform with config options', () => {
 }`))
   })
 
-  it('config.alias in sass', async () => {
+  test('config.alias in sass', async () => {
     const css = await run({
       src: "@import '@/b.scss';",
       filename: './__tests__/styles/a.scss'
@@ -189,7 +191,7 @@ describe('style transform with config options', () => {
 }`))
   })
 
-  it('config.alias in less', async () => {
+  test('config.alias in less', async () => {
     const css = await run({
       src: "@import '@/b.less';",
       filename: './__tests__/styles/a.less'

@@ -1,31 +1,30 @@
 {
+  "extends": "../../tsconfig.root.json",
   "compilerOptions": {
-    "target": "ES2017",
-    "module": "ESNext",
-    "removeComments": false,
-    "preserveConstEnums": false,
-    "moduleResolution": "node",
-    "experimentalDecorators": true,
-    "noImplicitAny": false,
-    "allowSyntheticDefaultImports": true,
-    "outDir": "lib",
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "strictNullChecks": true,
-    "skipLibCheck": true,
-    "resolveJsonModule": true,
-    "sourceMap": true,
     "baseUrl": ".",
-    "rootDir": ".",
+    "esModuleInterop": true,
     "jsx": "react",
     "jsxFactory": "h",
-    "declaration": false
+    "jsxFragmentFactory": "Fragment",
+    "module": "ESNext",
+    "sourceMap": true,
+    "target": "ES2017",
+    "typeRoots": ["./node_modules/@types"]
   },
-  "include": [
-    "src"
-  ],
-  "exclude": [
-    "node_modules"
-  ],
-  "compileOnSave": false
+  "include": ["src", "types"],
+  "ts-node": {
+    "compilerOptions": {
+      "forceConsistentCasingInFileNames": true,
+      "lib": ["ES2023"],
+      "module": "Node16",
+      "moduleResolution": "Node16",
+      "noEmit": true,
+      "resolveJsonModule": false,
+      "skipLibCheck": true,
+      "strict": true,
+      "target": "ES2022",
+    },
+    "experimentalSpecifierResolution": "node",
+    "require": ["tsconfig-paths/register"]
+  }
 }

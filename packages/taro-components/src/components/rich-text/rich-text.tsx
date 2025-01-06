@@ -1,5 +1,7 @@
 import { Component, h, ComponentInterface, Prop, Host } from '@stencil/core'
 
+import type { TextProps } from 'types'
+
 interface Attributes {
   [propName: string]: string | {
     [propName: string]: string
@@ -24,14 +26,18 @@ type StringType = string
 export type Nodes = ElementType[] | StringType
 
 @Component({
-  tag: 'taro-rich-text-core'
+  tag: 'taro-rich-text-core',
+  styleUrl: './style/index.scss'
 })
 export class RichText implements ComponentInterface {
   @Prop() nodes: Nodes
+  @Prop({ mutable: true }) selectable = false
+  @Prop({ mutable: true }) userSelect = false
+  @Prop() space?: keyof TextProps.TSpace
 
   renderNode = (node: ElementType) => {
     if ('type' in node && node.type === 'text') {
-      // unsupport Html Entries
+      // nonsupport Html Entries
       const content = (node.text || '').replace(/&nbsp;/g, '\u00A0')
       return content
     } else if ('name' in node && node.name) {

@@ -1,9 +1,11 @@
-import * as path from 'path'
-import * as fs from 'fs'
+import * as fs from 'node:fs'
+import * as path from 'node:path'
+
+import { isEmptyObject, readPageConfig } from '@tarojs/helper'
 import { camelCase } from 'lodash'
-import { isEmptyObject } from '@tarojs/helper'
+
+import { AppConfig, TransformEntry } from './types/index'
 import { getConfigContent, getConfigFilePath, parseBase64Image } from './utils'
-import { TransformEntry, AppConfig } from './types/index'
 
 function getPagesResource (appPath: string, basePath: string, pathPrefix: string) {
   const importPages: string[] = []
@@ -22,7 +24,11 @@ function getPagesResource (appPath: string, basePath: string, pathPrefix: string
     if (fs.existsSync(configFile)) {
       importConfigs.push(`import ${screenConfigName} from '.${pathPrefix}${pagePath}.config'`)
     } else {
-      importConfigs.push(`const ${screenConfigName} = {}`)
+      let result = {}
+      try {
+        result = readPageConfig(configFile)
+      } catch (err) {} // eslint-disable-line no-empty
+      importConfigs.push(`const ${screenConfigName} = ${JSON.stringify(result)}`)
     }
   })
   return {
@@ -32,13 +38,19 @@ function getPagesResource (appPath: string, basePath: string, pathPrefix: string
   }
 }
 
-function getPageScreen (pagePath: string) {
+function getPageComponent (pagePath: string) {
   const screen = camelCase(pagePath)
   const screenConfigName = `${screen}Config`
-  return `{name:'${screen}',pagePath:'${pagePath}',component:createPageConfig(${screen},{...${screenConfigName},pagePath:'${pagePath}'})}`
+  return `createPageConfig(${screen},{...${screenConfigName},pagePath:'${pagePath}'})`
 }
 
-function getAppConfig (appPath: string) {
+function getPageScreen (pagePath: string) {
+  const screen = camelCase(pagePath)
+  const screenComponent = getPageComponent(pagePath)
+  return `{name:'${screen}',pagePath:'${pagePath}',component:${screenComponent}}`
+}
+
+export function getAppConfig (appPath: string) {
   // 读取配置文件内容
   if (!appPath) {
     throw new Error('缺少 app 全局配置文件，请检查！')
@@ -114,21 +126,23 @@ export default function generateEntry ({
   const appComponentPath = `./${sourceDir}/${entryName}`
 
   const appTabBar = getFormatTabBar(appPath, basePath)
+  const firstPage = getPageComponent(routeList[0])
 
-  const code = `import { AppRegistry } from 'react-native'
+  const code = `import 'react-native-gesture-handler'
+  import { AppRegistry } from 'react-native'
   import { createReactNativeApp, createPageConfig } from '@tarojs/runtime-rn'
   import Component from '${appComponentPath}'
   ${importPageList}
   ${`import AppComponentConfig from '${appComponentPath}.config';`}
   ${importPageConfig}
-  
+
   AppComponentConfig.tabBar = ${JSON.stringify(appTabBar)}
 
   const buildConfig = ${JSON.stringify(appConfig)}
   const config = { appConfig: { ...buildConfig, ...AppComponentConfig } }
   global.__taroAppConfig = config
   config['pageList'] = [${routeList.map(pageItem => getPageScreen(pageItem))}]
-  AppRegistry.registerComponent('${appName}',() => createReactNativeApp(Component,config))
+  AppRegistry.registerComponent('${appName}',() => createReactNativeApp(Component,config,${firstPage}))
   `
   return code
 }

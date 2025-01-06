@@ -1,31 +1,41 @@
 import { ComponentType } from 'react'
 import { StandardProps } from './common'
-
 interface TextProps extends StandardProps {
   /** 文本是否可选
    * @default false
-   * @supported weapp, swan, alipay, tt, h5, rn
+   * @supported weapp, alipay, swan, tt, qq, jd, h5, rn, harmony_hybrid
    */
   selectable?: boolean
-
   /** 文本是否可选，该属性会使文本节点显示为 inline-block
    * @default false
-   * @supported weapp
+   * @supported weapp, h5, harmony_hybrid
    */
   userSelect?: boolean
-
   /** 显示连续空格
-   * @supported weapp, swan, tt
+   * @supported weapp, alipay, swan, tt, qq, jd, h5, harmony_hybrid
    */
   space?: keyof TextProps.TSpace
-
   /** 是否解码
    * @default false
-   * @supported weapp, tt
+   * @supported weapp, alipay, tt, qq, jd
+   * @h5 默认解码，不支持设置
    */
   decode?: boolean
+  /** 多行省略，值须大于等于 1，表现同 css 的 -webkit-line-clamp 属性一致。
+   * @supported alipay
+   */
+  numberOfLines?: number
+  /**
+   * 文本溢出处理
+   * @supported weapp
+   * @default 'visible'
+   */
+  overflow?: keyof TextProps.Overflow
+  /** 限制文本最大行数
+   * @supported weapp, harmony
+   */
+  maxLines?: number
 }
-
 declare namespace TextProps {
   /** space 的合法值 */
   interface TSpace {
@@ -36,12 +46,21 @@ declare namespace TextProps {
     /** 根据字体设置的空格大小 */
     nbsp
   }
+  interface Overflow {
+    /** 修剪文本 */
+    clip
+    /** 淡出 */
+    fade
+    /** 显示省略号 */
+    ellipsis
+    /** 文本不截断 */
+    visible
+  }
 }
-
 /** 文本
  * @classification base
- * @supported weapp, swan, alipay, tt, h5, rn
- * @example
+ * @supported weapp, alipay, swan, tt, qq, jd, h5, rn, harmony, harmony_hybrid
+ * @example_react
  * ```tsx
  * export default class PageView extends Component {
  *   state = {
@@ -84,8 +103,44 @@ declare namespace TextProps {
  *   }
  * }
  * ```
+ * @example_vue
+ * ``` html
+ * <template>
+ *   <view class="container">
+ *     <view v-for="(item, index) in contents">
+ *       <text>{{item.text}} line {{index + 1}}</text>
+ *     </view>
+ *     <button class="btn-max-w button_style" :plain="true" type="default" `@tap="add">add line</button>
+ *     <button class="btn-max-w button_style" :plain="true" type="default" :disabled="contentsLen ? false : true" `@tap="remove">remove line</button>
+ * </template>
+ *
+ * <script>
+ * export default {
+ *   data() {
+ *     return {
+ *       contents: [],
+ *       contentsLen: 0
+ *     }
+ *   },
+ *   methods: {
+ *     add () {
+ *       const cot = this.contents.slice()
+ *       cot.push({ text: 'hello world' })
+ *       this.contents = cot
+ *       this.contentsLen = cot.length
+ *     },
+ *
+ *     remove () {
+ *       const cot = this.contents.slice()
+ *       cot.pop()
+ *       this.contents = cot
+ *       this.contentsLen = cot.length
+ *     }
+ *   }
+ * }
+ * </script>
+ * ```
  * @see https://developers.weixin.qq.com/miniprogram/dev/component/text.html
  */
 declare const Text: ComponentType<TextProps>
-
 export { Text, TextProps }

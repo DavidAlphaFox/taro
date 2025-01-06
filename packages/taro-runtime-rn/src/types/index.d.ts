@@ -118,8 +118,8 @@ interface SubPackage {
 }
 
 interface PageItem {
-  name: string,
-  component: any,
+  name: string
+  component: any
   pagePath: string
 }
 export interface PageConfig extends CommonConfig {
@@ -129,7 +129,7 @@ export interface PageConfig extends CommonConfig {
    * default: false
    */
   disableScroll?: boolean
-  pagePath: string,
+  pagePath: string
   rn?: any
 }
 
@@ -154,15 +154,16 @@ export interface WindowConfig extends CommonConfig {
   allowsBounceVertical?: 'YES' | 'NO'
 }
 export interface AppConfig {
-  pages: string[],
-  window?: WindowConfig,
-  tabBar?: TabBar,
+  pages: string[]
+  window?: WindowConfig
+  tabBar?: TabBar
   subPackages?: SubPackage[]
-  subpackages?: SubPackage[],
-  designWidth: number,
-  deviceRatio: Record<number, number>,
-  linkPrefix: string[],
+  subpackages?: SubPackage[]
+  designWidth: number | ((size?: string | number) => number)
+  deviceRatio: Record<string, number>
+  linkPrefix: string[]
   rn?: any
+  entryPagePath?: string
 }
 
 export interface RNAppConfig {
@@ -170,7 +171,7 @@ export interface RNAppConfig {
   pageList: PageItem[]
 }
 
-export type HooksMethods = 'componentDidShow' | 'componentDidHide' | 'onPullDownRefresh' | 'onReachBottom' | 'onPageScroll' | 'onResize' | 'onTabItemTap'
+export type HooksMethods = 'componentDidShow' | 'componentDidHide' | 'onLoad' | 'onUnload' | 'onReady' | 'onPullDownRefresh' | 'onReachBottom' | 'onPageScroll' | 'onResize' | 'onTabItemTap'
 
 export interface CallbackResult {
   errMsg: string
@@ -183,8 +184,8 @@ export interface BaseOption {
 }
 
 export interface ScrollOption extends BaseOption{
-  selector?: string,
-  scrollTop?: number,
+  selector?: string
+  scrollTop?: number
   duration?: number
 }
 

@@ -9,10 +9,12 @@ import * as React from 'react'
 import {
   View
 } from 'react-native'
+
 import { noop } from '../../utils'
-import { RadioGroupProps, RadioGroupState, EventOnChange } from './PropsType'
+import { EventOnChange, RadioGroupProps, RadioGroupState } from './PropsType'
 
 class _RadioGroup extends React.Component<RadioGroupProps, RadioGroupState> {
+  static displayName = '_RadioGroup'
   state: RadioGroupState = {
     checkedValue: undefined
   }

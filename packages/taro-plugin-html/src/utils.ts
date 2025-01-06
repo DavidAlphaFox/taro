@@ -1,10 +1,14 @@
-import { isFunction, isString, Shortcuts } from '@tarojs/shared'
+import { isHasExtractProp } from '@tarojs/runtime'
+import { isFunction, isString, Shortcuts, toCamelCase } from '@tarojs/shared'
+
 import {
-  inlineElements,
   blockElements,
+  inlineElements,
   specialElements,
   SpecialMaps
 } from './constant'
+
+import type { TaroElement } from '@tarojs/runtime'
 
 export function isHtmlTags (nodeName: string): boolean {
   if (inlineElements.has(nodeName) || blockElements.has(nodeName) || specialElements.has(nodeName)) {
@@ -13,7 +17,7 @@ export function isHtmlTags (nodeName: string): boolean {
   return false
 }
 
-export function getMappedType (nodeName: string, rawProps: Record<string, any>): string {
+export function getMappedType (nodeName: string, rawProps: Record<string, any>, node?: TaroElement): string {
   if (inlineElements.has(nodeName)) {
     return 'text'
   } else if (specialElements.has(nodeName)) {
@@ -24,7 +28,29 @@ export function getMappedType (nodeName: string, rawProps: Record<string, any>):
     const { mapName } = mapping
     return isFunction(mapName) ? mapName(rawProps) : mapName
   } else {
-    return 'view'
+    // fix #15326
+    if (process.env.TARO_ENV === 'swan') return 'view'
+    if (node) {
+      const { props } = node
+      for (const prop in props) {
+        const propInCamelCase = toCamelCase(prop)
+        if (propInCamelCase === 'catchMove' && props[prop] !== false) {
+          return 'catch-view'
+        }
+      }
+    }
+    if (!node) {
+      return 'view'
+    }
+    if (node.isOnlyClickBinded()) {
+      return 'click-view'
+    } else if (node.isAnyEventBinded()) {
+      return 'view'
+    } else if (isHasExtractProp(node)) {
+      return 'static-view'
+    } else {
+      return 'pure-view'
+    }
   }
 }
 
@@ -47,12 +73,13 @@ function getMapNameByCondition (nodeName: string, attr: string, props: Record<st
   }
 }
 
-export function mapNameByContion (nodeName: string, key: string, element: any) {
+export function mapNameByContion (nodeName: string, key: string, element: any, componentsAlias) {
   const mapName = getMapNameByCondition(nodeName, key, element.props)
   if (mapName) {
+    const mapNameAlias = componentsAlias[mapName]._num
     element.enqueueUpdate({
       path: `${element._path}.${Shortcuts.NodeName}`,
-      value: mapName
+      value: mapNameAlias
     })
   }
 }
@@ -61,7 +88,7 @@ export function ensureHtmlClass (tagName: string, className = ''): string {
   const classList = className.split(' ')
   const htmlClass = `h5-${tagName}`
   if (classList.indexOf(htmlClass) === -1) {
-    classList.push(htmlClass)
+    classList.unshift(htmlClass)
   }
   return classList.join(' ')
 }

@@ -6,14 +6,16 @@ import type { IPluginContext, TaroPlatformBase } from '@tarojs/service'
 const spawn = require('cross-spawn')
 const detectPort = require('detect-port')
 
-interface IOptions {
+export interface IOptions {
   enabled?: boolean
+  hostname?: string
   port?: string
 }
 
 export default function (ctx: IPluginContext, options: IOptions) {
   if (process.env.NODE_ENV === 'production' || options.enabled === false) return
 
+  const hostname = JSON.stringify(options.hostname || 'localhost')
   const port = Number(options.port || '8098')
 
   detectPort(port, (err, availablePort) => {
@@ -41,8 +43,10 @@ export default function (ctx: IPluginContext, options: IOptions) {
       .plugin('definePlugin')
       .tap(args => {
         const config = args[0]
+        config.__VUE_DEVTOOLS_HOSTNAME__ = hostname
         config.__VUE_DEVTOOLS_PORT__ = port
         config.ENABLE_SIZE_APIS = true
+        config.ENABLE_CONTAINS = true
         return args
       })
 
@@ -55,14 +59,37 @@ export default function (ctx: IPluginContext, options: IOptions) {
         return args
       })
   })
+
+  ctx.modifyRunnerOpts(({ opts }) => {
+    if (!opts?.compiler) return
+
+    if (isString(opts.compiler)) {
+      opts.compiler = {
+        type: opts.compiler
+      }
+    }
+    if (opts.compiler.type === 'webpack5') {
+      opts.compiler.prebundle ||= {}
+      const prebundle = opts.compiler.prebundle
+      if (prebundle.enable === false) return
+
+      prebundle.webpack ||= {}
+      const webpackConfig = prebundle.webpack
+      webpackConfig.provide ||= []
+      webpackConfig.provide.push(function (obj, taroRuntimeBundlePath) {
+        obj.globalThis = [taroRuntimeBundlePath, 'window']
+        obj.HTMLElement = [taroRuntimeBundlePath, 'TaroElement']
+      })
+    }
+  })
 }
 
 function injectRuntimePath (platform: TaroPlatformBase) {
-  const injectedPath = '@tarojs/plugin-vue-devtools/dist/runtime'
+  const injectedPath = 'post:@tarojs/plugin-vue-devtools/dist/runtime'
 
   if (isArray(platform.runtimePath)) {
-    platform.runtimePath.push(injectedPath)
+    (platform.runtimePath as string[]).push(injectedPath)
   } else if (isString(platform.runtimePath)) {
-    platform.runtimePath = [platform.runtimePath, injectedPath]
+    platform.runtimePath = [platform.runtimePath as string, injectedPath]
   }
 }

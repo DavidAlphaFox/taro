@@ -1,9 +1,8 @@
 {
   "name": "@tarojs/extend",
-  "version": "3.3.15",
+  "version": "4.0.9-beta.2",
   "description": "Taro extend functionality",
-  "author": "yuche <i@yuche.me>",
-  "homepage": "https://github.com/nervjs/taro/tree/master/packages/taro-extend#readme",
+  "author": "O2Team",
   "license": "MIT",
   "main": "src/index.js",
   "files": [
@@ -21,7 +20,15 @@
   "bugs": {
     "url": "https://github.com/NervJS/taro/issues"
   },
-  "publishConfig": {
-    "access": "public"
+  "engines": {
+    "node": ">= 18"
+  },
+  "devDependencies": {
+    "@tarojs/runtime": "workspace:*",
+    "@tarojs/taro": "workspace:*"
+  },
+  "peerDependencies": {
+    "@tarojs/runtime": "workspace:*",
+    "@tarojs/taro": "workspace:*"
   }
 }

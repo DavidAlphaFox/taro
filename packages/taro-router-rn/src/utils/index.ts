@@ -1,6 +1,7 @@
 import { camelCase } from 'lodash'
-import { parseUrl } from 'query-string'
-import { TaroTabBarConfig, CallbackResult, OptionsFunc } from './types'
+import queryString from 'query-string'
+
+import { CallbackResult, OptionsFunc, TaroTabBarConfig } from './types'
 
 const globalAny: any = global
 
@@ -31,11 +32,10 @@ export function isUrl (str: string): boolean {
   return false
 }
 
-export function isFunction (obj: unknown): boolean {
-  return typeof obj === 'function'
+export function isFunction (o: unknown): o is (...args: any[]) => any {
+  return typeof o === 'function'
 }
 
-// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 export function isEmptyObject (obj: any): boolean {
   if (obj == null) {
     return true
@@ -93,7 +93,7 @@ export function getTabVisible (): boolean {
   return getTabConfig('tabBarVisible')
 }
 
-export function getDefalutTabItem (index: number): Record<string, unknown> {
+export function getDefaultTabItem (index: number): Record<string, unknown> {
   const _taroAppConfig = globalAny.__taroAppConfig || {}
   const tabBar = _taroAppConfig?.appConfig?.tabBar || []
   return tabBar?.list[index] || {}
@@ -115,9 +115,17 @@ export function getTabBarPages (): string[] {
 export function handleUrl (url: string): Record<string, any> {
   const path = url.split('?')[0]
   const pageName = camelCase(path.startsWith('/') ? path : `/${path}`)
-  const params = parseUrl(url.startsWith('/') ? url.substr(1) : url).query || {}
+  const params = queryString.parseUrl(url.startsWith('/') ? url.substr(1) : url).query || {}
   return {
     pageName,
     params
   }
+}
+
+export function updateCurrentJumpUrl (path: string) {
+  globalAny.__taroJumpUrl = path
+}
+
+export function getCurrentJumpUrl (): string {
+  return globalAny?.__taroJumpUrl ?? ''
 }

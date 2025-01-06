@@ -1,5 +1,9 @@
 import { Dimensions } from 'react-native'
-import { AppConfig } from './types/index'
+import DeviceInfo from 'react-native-device-info'
+
+import { isFunction } from './utils'
+
+import type { AppConfig } from './types/index'
 
 const globalAny: any = global
 const defaultWidth = 750
@@ -9,15 +13,23 @@ const defaultRadio = {
   828: 1.81 / 2
 }
 
+let uiWidthPx = 375
+
+if (DeviceInfo.isTablet()) {
+  uiWidthPx = 750
+}
+
 export function pxTransform (size: number): number {
   const deviceWidthDp = Dimensions.get('window').width
-  const uiWidthPx = 375
   const config: AppConfig = globalAny.__taroAppConfig?.appConfig || {}
-  const { designWidth = defaultWidth, deviceRatio = defaultRadio } = config
+  const deviceRatio = config.deviceRatio || defaultRadio
+  const designWidth = ((input = 0) => isFunction(config.designWidth)
+    ? config.designWidth(input)
+    : config.designWidth || defaultWidth)(size)
   if (!(designWidth in deviceRatio)) {
     throw new Error(`deviceRatio 配置中不存在 ${designWidth} 的设置！`)
   }
   const formatSize = ~~size
-  const rateSize = formatSize / (deviceRatio[designWidth] * 2)
-  return rateSize * deviceWidthDp / uiWidthPx
+  const rateSize = formatSize * deviceRatio[designWidth]
+  return rateSize * deviceWidthDp / (uiWidthPx * 2)
 }

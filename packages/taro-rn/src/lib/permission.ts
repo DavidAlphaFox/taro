@@ -1,12 +1,28 @@
-import { Linking, AppState, NativeEventSubscription } from 'react-native';
-import * as Permissions from 'expo-permissions';
-import { errorHandler, successHandler } from '../utils';
+import { Camera } from 'expo-camera'
+import { getMediaLibraryPermissionsAsync, requestMediaLibraryPermissionsAsync } from 'expo-image-picker'
+import {
+  getForegroundPermissionsAsync,
+  // getBackgroundPermissionsAsync,
+  requestForegroundPermissionsAsync,
+  // requestBackgroundPermissionsAsync
+} from 'expo-location'
+import { AppState, Linking, NativeEventSubscription } from 'react-native'
+
+import { errorHandler, successHandler } from '../utils'
+
+const {
+  getCameraPermissionsAsync,
+  getMicrophonePermissionsAsync,
+  requestCameraPermissionsAsync,
+  requestMicrophonePermissionsAsync
+} = Camera
 
 const scopeMap = {
-  'scope.userLocation': Permissions.LOCATION,
-  'scope.record': Permissions.AUDIO_RECORDING,
-  'scope.writePhotosAlbum': Permissions.CAMERA_ROLL,
-  'scope.camera': Permissions.CAMERA,
+  'scope.userLocation': [getForegroundPermissionsAsync, requestForegroundPermissionsAsync],
+  'scope.record': [getMicrophonePermissionsAsync, requestMicrophonePermissionsAsync],
+  'scope.writePhotosAlbum': [getMediaLibraryPermissionsAsync, requestMediaLibraryPermissionsAsync],
+  'scope.camera': [getCameraPermissionsAsync, requestCameraPermissionsAsync],
+  // 'scope.userLocationBackground': [getBackgroundPermissionsAsync, requestBackgroundPermissionsAsync],
   // 'scope.NOTIFICATIONS': Permissions.NOTIFICATIONS,
   // 'scope.USER_FACING_NOTIFICATIONS': Permissions.USER_FACING_NOTIFICATIONS,
   // 'scope.CONTACTS': Permissions.CONTACTS,
@@ -19,21 +35,17 @@ let stateListener // 缓存监听函数
 let appStateSubscription: NativeEventSubscription | undefined
 
 const getAuthSetting = async () => {
-  const keyArr = Object.keys(scopeMap)
-  const scopeArr = keyArr.map(key => scopeMap[key])
-  let auths = {}
-  const { permissions } = await Permissions.getAsync(...scopeArr)
-  Object.keys(permissions).forEach(pkey => {
-    keyArr.forEach((skey) => {
-      if (scopeMap[skey] === pkey) {
-        auths[skey] = permissions[pkey].status === 'granted'
-      }
-    })
-  })
+  const auths = {}
+
+  await Promise.all(Object.keys(scopeMap).map(async key => {
+    const { granted } = await scopeMap[key][0]()
+    auths[key] = granted
+  }))
+
   return auths
 }
 
-const handleAppStateChange = async (nextAppState, resolve, reject, opts) => {
+const handleAppStateChange = async (_nextAppState, resolve, reject, opts) => {
   const { success, fail, complete } = opts
   const res: any = {}
 
@@ -43,7 +55,7 @@ const handleAppStateChange = async (nextAppState, resolve, reject, opts) => {
       res.errMsg = 'openSetting:ok'
       success?.(res)
       complete?.(res)
-  
+
       appStateSubscription?.remove()
       resolve(res)
     } catch (error) {
@@ -55,39 +67,39 @@ const handleAppStateChange = async (nextAppState, resolve, reject, opts) => {
     }
   }
   // AppState.currentState = nextAppState;
-};
+}
 
 export async function authorize(opts: Taro.authorize.Option): Promise<TaroGeneral.CallbackResult> {
   const { scope, success, fail, complete } = opts
   const res: any = {}
 
-    try {
-      const { status } = await Permissions.askAsync(scopeMap[scope])
-      if (status === 'granted') {
-        res.errMsg = 'authorize:ok'
-        return successHandler(success, complete)(res)
-      } else {
-        res.errMsg = 'authorize:denied/undetermined'
-        return errorHandler(fail, complete)(res)
-      }
-    } catch (error) {
-      res.errMsg = 'authorize:fail'
+  try {
+    const { granted } = await scopeMap[scope][1]()
+    if (granted) {
+      res.errMsg = 'authorize:ok'
+      return successHandler(success, complete)(res)
+    } else {
+      res.errMsg = 'authorize:denied/undetermined'
       return errorHandler(fail, complete)(res)
     }
+  } catch (error) {
+    res.errMsg = 'authorize:fail'
+    return errorHandler(fail, complete)(res)
+  }
 }
 
 export async function getSetting(opts: Taro.getSetting.Option = {}): Promise<Taro.getSetting.SuccessCallbackResult> {
   const { success, fail, complete } = opts
   const res: any = {}
 
-    try {
-      res.authSetting = await getAuthSetting()
-      res.errMsg = 'getSetting:ok'
-      return successHandler(success, complete)(res)
-    } catch (error) {
-      res.errMsg = 'getSetting:fail'
-      return errorHandler(fail, complete)(res)
-    }
+  try {
+    res.authSetting = await getAuthSetting()
+    res.errMsg = 'getSetting:ok'
+    return successHandler(success, complete)(res)
+  } catch (error) {
+    res.errMsg = 'getSetting:fail'
+    return errorHandler(fail, complete)(res)
+  }
 }
 
 export function openSetting(opts: Taro.openSetting.Option = {}): Promise<Taro.openSetting.SuccessCallbackResult> {

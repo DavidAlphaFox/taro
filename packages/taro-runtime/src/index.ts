@@ -1,29 +1,58 @@
-import './polyfill/reflect-metadata'
-export { TaroNode } from './dom/node'
-export { TaroText } from './dom/text'
+// hook
+// dom-external
+import './dom-external'
+
+import env from './env'
+
+export { hooks } from '@tarojs/shared'
+// bom
+export { taroDocumentProvider as document } from './bom/document'
+export { taroGetComputedStyleProvider as getComputedStyle } from './bom/getComputedStyle'
+export { History } from './bom/history'
+export { Location } from './bom/location'
+export { nav as navigator } from './bom/navigator'
+export { caf as cancelAnimationFrame, now, raf as requestAnimationFrame } from './bom/raf'
+export { parseUrl, TaroURLProvider as URL } from './bom/URL'
+export { URLSearchParams } from './bom/URLSearchParams'
+export { taroHistoryProvider as history, taroLocationProvider as location, taroWindowProvider as window } from './bom/window'
+// dom
 export { TaroElement } from './dom/element'
-export { TaroRootElement } from './dom/root'
+export { createEvent, eventHandler, TaroEvent } from './dom/event'
 export { FormElement } from './dom/form'
-export { SVGElement } from './dom/svg'
-export { TaroEvent, createEvent } from './dom/event'
-export { createDocument, document } from './bom/document'
-export { window } from './bom/window'
-export { navigator } from './bom/navigator'
-export { default as container } from './container'
-export { default as processPluginHooks } from './container/plugin-hooks'
-export { default as SERVICE_IDENTIFIER } from './constants/identifiers'
-export { connectReactPage, createReactApp, createNativeComponentConfig } from './dsl/react'
-export { connectVuePage, createVueApp } from './dsl/vue'
-export { createVue3App } from './dsl/vue3'
-export * from './dsl/instance'
-export { createPageConfig, injectPageInstance, createComponentConfig, createRecursiveComponentConfig, stringify } from './dsl/common'
-export { Current, getCurrentInstance } from './current'
+export { TaroNode } from './dom/node'
+export { TaroRootElement } from './dom/root'
 export { Style } from './dom/style'
-export * from './dsl/hooks'
-export { options } from './options'
-export { nextTick } from './next-tick'
-export { hydrate } from './hydrate'
+export { SVGElement } from './dom/svg'
+export { TaroText } from './dom/text'
+export { MutationObserver } from './dom-external/mutation-observer'
+// others
+export { env }
+export * from './constants'
+export { Current, getCurrentInstance } from './current'
+export { eventSource } from './dom/event-source'
+export {
+  createComponentConfig,
+  createPageConfig,
+  createRecursiveComponentConfig,
+  getOnHideEventKey,
+  getOnReadyEventKey,
+  getOnShowEventKey,
+  getPageInstance,
+  getPath,
+  injectPageInstance,
+  removePageInstance,
+  safeExecute,
+  stringify
+} from './dsl/common'
 export * from './emitter/emitter'
-export { raf as requestAnimationFrame, caf as cancelAnimationFrame, now } from './bom/raf'
-export { getComputedStyle } from './bom/getComputedStyle'
+export { hydrate } from './hydrate'
+export { nextTick } from './next-tick'
+export { options } from './options'
+export * from './perf'
+export * from './utils'
+// typings
+export * from './dsl/instance'
 export * from './interface'
+
+// Polyfills
+export * from './polyfill'

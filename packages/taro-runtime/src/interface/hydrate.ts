@@ -1,5 +1,5 @@
 import type { Shortcuts } from '@tarojs/shared'
-import type { PageConfig } from '@tarojs/taro'
+import type { PageConfig } from './utils'
 
 export interface MpInstance {
   config: PageConfig
@@ -10,6 +10,7 @@ export interface MpInstance {
   $taroPath: string
   __data__: any
   data: any
+  exitState?: any
   selectComponent: (selector: string) => any
 }
 
@@ -18,11 +19,12 @@ export interface MiniElementData {
   [Shortcuts.NodeName]: string
   [Shortcuts.Class]?: string
   [Shortcuts.Style]?: string
-  uid: string
+  uid?: string
+  sid: string
   [key: string]: unknown
 }
 
-interface MiniTextData {
+export interface MiniTextData {
   [Shortcuts.Text]: string
   [Shortcuts.NodeName]: string
 }

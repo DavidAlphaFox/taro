@@ -8,9 +8,9 @@ import {
   WebView,
   WebViewMessageEvent
 } from 'react-native-webview'
-import * as ReactDOMServer from 'react-dom/server.browser'
-import { omit, parseStyles } from '../../utils'
-import { RichTextProps, RichTextState, Node } from './PropsType'
+
+import { omit } from '../../utils'
+import { Node, RichTextProps, RichTextState } from './PropsType'
 
 class _RichText extends React.Component<RichTextProps, RichTextState> {
   static defaultProps = {
@@ -21,35 +21,23 @@ class _RichText extends React.Component<RichTextProps, RichTextState> {
     webViewHeight: 0
   }
 
-  renderChildrens = (arr: Array<any> = []): JSX.Element[] | undefined => {
-    if (arr.length === 0) return
+  private webview = React.createRef<WebView>()
+
+  renderChildrens = (arr: Node []): string => {
+    if (arr.length === 0) return ''
     return arr.map((list) => {
       if (list.type === 'text') {
-        return this.renderText(list.text)
+        return list.text
       }
       return this.renderNodes(list)
-    })
+    }).join('')
   }
 
-  renderText = (text = ''): JSX.Element => {
-    return React.createElement('span', {
-      dangerouslySetInnerHTML: { __html: text },
-      key: Math.random()
-    })
-  }
-
-  renderNodes = (item: Node): React.ReactElement => {
-    const child = this.renderChildrens(item.children)
-    return React.createElement(
-      item.name || 'div',
-      {
-        key: Math.random(),
-        ...omit(item.attrs, ['class', 'style']),
-        className: item.attrs.class,
-        style: parseStyles(item.attrs.style)
-      },
-      child
-    )
+  renderNodes = (item: Node): string => {
+    const child = item.children ? this.renderChildrens(item.children) : ''
+    return `<${item.name} ${item.attrs && Object.keys(item.attrs).map(key => {
+      return `${key}="${item.attrs[key]}"`
+    }).join(' ')}>${child}</${item.name}>`
   }
 
   onWebViewMessage = (event: WebViewMessageEvent):void => {
@@ -64,11 +52,13 @@ class _RichText extends React.Component<RichTextProps, RichTextState> {
       nodes
     } = this.props
 
+    const otherProps = omit(this.props, ['style', 'nodes'])
+
     const html: string = typeof nodes === 'string'
       ? nodes
       : nodes.map((item: Node): string => {
-        return ReactDOMServer.renderToStaticMarkup(this.renderNodes(item))
-      }).join(',')
+        return this.renderNodes(item)
+      }).join('')
 
     return (
       <View style={Object.assign({
@@ -76,6 +66,7 @@ class _RichText extends React.Component<RichTextProps, RichTextState> {
         width: '100%',
       }, style)}>
         <WebView
+          ref={this.webview}
           source={{ html: '<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>' + html }}
           scalesPageToFit={false}
           onMessage={this.onWebViewMessage}
@@ -85,10 +76,13 @@ class _RichText extends React.Component<RichTextProps, RichTextState> {
             document.body.style.padding = 0;
             document.body.style.margin = 0;
             window.ReactNativeWebView.postMessage(document.body.scrollHeight);
+            true;
           `}
+          onLoadEnd={() => this.webview.current?.injectJavaScript('window.ReactNativeWebView.postMessage(document.body.scrollHeight);')} // android
           style={{
             backgroundColor: 'transparent'
           }}
+          {...otherProps}
         />
       </View>
     )

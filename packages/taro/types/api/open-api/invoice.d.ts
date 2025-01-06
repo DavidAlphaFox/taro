@@ -27,11 +27,11 @@ declare module '../../index' {
       /** 抬头名称 */
       title: string
       /** 抬头类型 */
-      type: keyof invoice_type
+      type: keyof InvoiceType
     }
 
     /** 抬头类型 */
-    interface invoice_type {
+    interface InvoiceType {
       0: '单位'
       1: '个人'
     }
@@ -75,7 +75,7 @@ declare module '../../index' {
      * 其中 `access_token` 的获取请参考[auth.getAccessToken](https://developers.weixin.qq.com/miniprogram/dev/api-backend/open-api/access-token/auth.getAccessToken.html)文档
      * @supported weapp
      * @example
-     ```tsx
+     * ```tsx
      * Taro.chooseInvoice({
      *   success: function (res) {}
      * })

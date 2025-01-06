@@ -1,25 +1,24 @@
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { Component, h, ComponentInterface, Prop, Element, Event } from '@stencil/core'
+import { Component, h, ComponentInterface, Prop, Element, Event, EventEmitter } from '@stencil/core'
 
 const LONG_TAP_DELAY = 500
 
 @Component({
   tag: 'taro-canvas-core',
-  styleUrl: './style/index.css'
+  styleUrl: './style/index.scss'
 })
 export class Canvas implements ComponentInterface {
-  private timer: NodeJS.Timeout
+  private timer: ReturnType<typeof setTimeout>
 
-  @Prop() canvasId: string
+  @Prop({ attribute: 'id' }) canvasId: string
+  @Prop({ mutable: true, reflect: true }) height: string
+  @Prop({ mutable: true, reflect: true }) width: string
   @Prop() nativeProps = {}
 
   @Element() el: HTMLElement
 
   @Event({
     eventName: 'longtap'
-  })
-
-  onLongTap
+  }) onLongTap: EventEmitter
 
   onTouchStart = () => {
     this.timer = setTimeout(() => {
@@ -35,6 +34,17 @@ export class Canvas implements ComponentInterface {
     clearTimeout(this.timer)
   }
 
+  componentDidRender (): void {
+    const [canvas] = this.el.children as unknown as HTMLCanvasElement[]
+    if (!this.height || !this.width) {
+      let style = window.getComputedStyle(canvas)
+      this.height ||= style.height
+      this.width ||= style.width
+    }
+    canvas.height = parseInt(this.height)
+    canvas.width = parseInt(this.width)
+  }
+
   render () {
     const { canvasId, nativeProps } = this
 
@@ -47,6 +57,7 @@ export class Canvas implements ComponentInterface {
         }}
         onTouchStart={this.onTouchStart}
         onTouchMove={this.onTouchMove}
+        onTouchCancel={this.onTouchEnd}
         onTouchEnd={this.onTouchEnd}
         {...nativeProps}
       />

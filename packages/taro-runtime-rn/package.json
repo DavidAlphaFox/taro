@@ -1,40 +1,52 @@
 {
-    "name": "@tarojs/runtime-rn",
-    "version": "3.3.15",
-    "description": "taro-runtime-rn",
-    "main": "dist/index.js",
-    "types": "./src/index.ts",
-    "files": [
-        "dist",
-        "src"
-    ],
-    "scripts": {
-        "build": "tsc",
-        "dev": "tsc -w",
-        "lint": "eslint .",
-        "test": "jest",
-        "test:dev": "jest --watch",
-        "test:coverage": "jest --coverage"
-    },
-    "keywords": [
-        "taro"
-    ],
-    "repository": {
-        "type": "git",
-        "url": "git+https://github.com/NervJS/taro.git"
-    },
-    "author": "yechunxi",
-    "bugs": {
-        "url": "https://github.com/NervJS/taro/issues"
-    },
-    "dependencies": {
-        "@tarojs/components-rn": "3.3.15",
-        "@tarojs/router-rn": "3.3.15"
-    },
-    "resolutions": {
-        "@types/react": "17.0.11"
-    },
-    "devDependencies": {
-        "@types/react-native": "0.66.5"
-    }
+  "name": "@tarojs/runtime-rn",
+  "version": "4.0.9-beta.2",
+  "description": "taro-runtime-rn",
+  "author": "O2Team",
+  "license": "MIT",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "src"
+  ],
+  "scripts": {
+    "prod": "pnpm run build",
+    "prebuild": "pnpm run clean",
+    "clean": "rimraf ./dist",
+    "dev": "tsc -w",
+    "build": "tsc",
+    "lint": "eslint src --ext .js,.jsx,.ts,.tsx"
+  },
+  "keywords": [
+    "taro",
+    "runtime-rn"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/NervJS/taro.git"
+  },
+  "bugs": {
+    "url": "https://github.com/NervJS/taro/issues"
+  },
+  "engines": {
+    "node": ">= 18"
+  },
+  "dependencies": {
+    "@tarojs/components-rn": "workspace:*",
+    "@tarojs/router-rn": "workspace:*",
+    "@tarojs/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "react": "^18.2.0",
+    "react-native": "^0.73.1",
+    "react-native-device-info": "^10.12.0",
+    "react-native-root-siblings": "^5.0.1"
+  },
+  "peerDependencies": {
+    "react": ">= 18",
+    "react-native": ">= 0.63.0",
+    "react-native-device-info": ">= 10.0.0",
+    "react-native-root-siblings": ">= 5"
+  }
 }

@@ -9,10 +9,11 @@
 //     Zepto.js
 //     (c) 2010-2017 Thomas Fuchs
 //     Zepto.js may be freely distributed under the MIT license.
-import Taro from '@tarojs/taro'
 import { window } from '@tarojs/runtime'
-import { Sizzle } from './sizzle'
+import Taro from '@tarojs/taro'
+
 import { initEvent } from './event'
+import { Sizzle } from './sizzle'
 
 export const Zepto = (function () {
   let undefined; let key; let $; let classList; const emptyArray = []; const concat = emptyArray.concat; const filter = emptyArray.filter; const slice = emptyArray.slice
@@ -814,9 +815,13 @@ export const Zepto = (function () {
         if (isBrowser) {
           return Promise.resolve(hasScrollTop ? this[0].scrollTop : this[0].pageYOffset)
         }
-        return hasScrollTop ? Promise.resolve(this[0].scrollTop) : new Promise((resolve) => {
+        return hasScrollTop ? Promise.resolve(this[0].scrollTop) : new Promise((resolve, reject) => {
           Taro.createSelectorQuery().select('#' + this[0].uid).scrollOffset(function (res) {
-            resolve(res.scrollTop)
+            if (res) {
+              resolve(res.scrollTop)
+            } else {
+              reject(new Error(`get scrollTop error: #${this[0].uid} query fail`))
+            }
           }).exec()
         })
       }

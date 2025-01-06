@@ -215,7 +215,7 @@ declare module '../../index' {
       /** 服务路径 */
       path: string
       /** HTTP请求方法，默认 GET */
-      method?: keyof request.method
+      method?: keyof request.Method
       /** 请求数据 */
       data?: P
       /** 设置请求的 header，header 中不能设置 Referer。content-type 默认为 application/json */
@@ -223,7 +223,7 @@ declare module '../../index' {
       /** 超时时间，单位为毫秒 */
       timeout?: number
       /** 返回的数据格式 */
-      dataType?: request.dataType
+      dataType?: request.DataType
       /** 响应的数据类型 */
       responseType?: keyof {
         text
@@ -496,6 +496,7 @@ declare module '../../index' {
     callContainer < R = any, P = any >(params: cloud.CallContainerParam<P>): Promise<cloud.CallContainerResult<R>>
   }
 
+  /** @ignore */
   interface Cloud {
       /** 在调用云开发各 API 前，需先调用初始化方法 init 一次（全局只需一次，多次调用时只有第一次生效）
      * @supported weapp
@@ -690,6 +691,21 @@ declare module '../../index' {
      * @see https://developers.weixin.qq.com/miniprogram/dev/wxcloud/reference-sdk-api/Cloud.database.html
      */
     database(config?: cloud.IConfig): DB.Database
+
+    /** 调用云托管服务
+     * @supported weapp
+     * @example
+     * 假设已经初始化了一个叫c1的云开发实例，并发起云托管调用
+     *
+     * ``` tsx
+     * const r = await c1.callContainer({
+     *   path: '/path/to/container', // 填入容器的访问路径
+     *   method: 'POST',
+     * })
+     * ```
+     * @see https://developers.weixin.qq.com/miniprogram/dev/wxcloud/reference-sdk-api/container/Cloud.callContainer.html
+     */
+     callContainer < R = any, P = any >(params: cloud.CallContainerParam<P>): Promise<cloud.CallContainerResult<R>>
   }
 
   namespace DB {

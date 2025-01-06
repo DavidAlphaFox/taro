@@ -1,26 +1,27 @@
-import { utils } from 'stylelint'
 import { allProps } from 'react-native-known-styling-properties'
+import stylelint from 'stylelint'
+
 import {
+  isCustomProperty,
+  isStandardSyntaxDeclaration,
+  isStandardSyntaxProperty,
+  isString,
   kebabCase,
   namespace,
-  isString,
-  isCustomProperty,
-  isStandardSyntaxProperty,
-  isStandardSyntaxDeclaration,
   optionsMatches
-} from '../../utils'
+} from '../../utils/index.js'
 
 export const ruleName = namespace('style-property-no-unknown')
 
-export const messages = utils.ruleMessages(ruleName, {
-  rejected: property => `无效的 React Native 样式属性 "${property}"`
+export const messages = stylelint.utils.ruleMessages(ruleName, {
+  rejected: (property) => `无效的 React Native 样式属性 "${property}"`
 })
 
 const props = allProps.map(kebabCase)
 
 export default function (actual, options) {
   return function (root, result) {
-    const validOptions = utils.validateOptions(
+    const validOptions = stylelint.utils.validateOptions(
       result,
       ruleName,
       {
@@ -39,7 +40,7 @@ export default function (actual, options) {
       return
     }
 
-    root.walkDecls(decl => {
+    root.walkDecls((decl) => {
       const prop = decl.prop
 
       if (!isStandardSyntaxProperty(prop)) {
@@ -62,7 +63,7 @@ export default function (actual, options) {
         return
       }
 
-      utils.report({
+      stylelint.utils.report({
         message: messages.rejected(prop),
         node: decl,
         result,

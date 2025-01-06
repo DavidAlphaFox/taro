@@ -1,6 +1,7 @@
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { Component, Prop, h, ComponentInterface, Host, Listen, State, Event, EventEmitter, Element } from '@stencil/core'
 import classNames from 'classnames'
+
+import { handleStencilNodes } from '../../utils'
 
 @Component({
   tag: 'taro-view-core',
@@ -20,7 +21,7 @@ export class View implements ComponentInterface {
     eventName: 'longpress'
   }) onLongPress: EventEmitter
 
-  private timeoutEvent: NodeJS.Timeout
+  private timeoutEvent: ReturnType<typeof setTimeout>
   private startTime = 0
 
   @Listen('touchstart')
@@ -62,10 +63,7 @@ export class View implements ComponentInterface {
   }
 
   componentDidRender () {
-    const el = this.el
-    el.childNodes.forEach(item => {
-      if (item.nodeType === document.COMMENT_NODE) el.removeChild(item)
-    })
+    handleStencilNodes(this.el)
   }
 
   render() {

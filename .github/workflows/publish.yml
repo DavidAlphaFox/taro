@@ -1,29 +1,100 @@
 name: publish
 on:
-  # When Release Pull Request is merged
   push:
     branches:
-      - '**'
+      - 'chore/**'
+      - 'feat/**'
+      - 'fix/**'
+      - '1.x'
+      - '2.x'
+      - '3.x'
+      - '4.x'
+  # When Release Pull Request is merged
   pull_request:
     branches:
-      - next
+      - main
     types: [closed]
 
 env:
   CI: true
+permissions: {}
 jobs:
-  publish:
-    name: Publish
-    runs-on: ubuntu-18.04
+  need-publish:
+    permissions:
+      actions: write # to cancel running workflow (andymckay/cancel-action)
+    name: Need Publish
+    runs-on: ubuntu-latest
+    outputs:
+      ABORT: ${{ env.ABORT }}
+    env:
+      ABORT: false
+      COMMIT_MESSAGE: ''
     steps:
       # Setup
       - name: Checkout
-        uses: actions/checkout@v2
-      - name: Setup Node ${{ matrix.node_version }}
-        uses: actions/setup-node@v1
+        uses: actions/checkout@v4
+
+      # Log meta
+      - name : GITHUB CONTEXT
+        env:
+          GITHUB_CONTEXT: ${{ toJson(github) }}
+        run: echo "$GITHUB_CONTEXT"
+
+      # Get commit message
+      - name: Get commit message
+        run: |
+          COMMIT_MESSAGE=$(git log --format=%s -n 1)
+          echo "COMMIT_MESSAGE=${COMMIT_MESSAGE}" >> $GITHUB_ENV
+      - name: Show commit message
+        run : echo "$COMMIT_MESSAGE"
+
+      - name: Commit message compliance verification
+        if: startsWith( env.COMMIT_MESSAGE , 'chore(release):' ) != true
+        run: echo "ABORT=true" >> $GITHUB_ENV
+
+      - name: Publish push tag verification
+        if: github.event_name == 'push' && contains( env.COMMIT_MESSAGE , '--tag=' ) != true
+        run: echo "ABORT=true" >> $GITHUB_ENV
+
+  build-rust-binding:
+    name: Build Rust Binding
+    needs: [need-publish]
+    if: needs.need-publish.outputs.ABORT != 'true'
+    uses: ./.github/workflows/build-rust-binding.yml
+
+  build-rust-wasm:
+    name: Build Rust WASM
+    needs: [need-publish]
+    if: needs.need-publish.outputs.ABORT != 'true'
+    uses: ./.github/workflows/build-rust-wasm.yml
+
+  publish:
+    permissions:
+      contents: write # to create tags and refs
+      actions: write # to cancel running workflow (andymckay/cancel-action)
+      issues: write # to create comment
+      pull-requests: write # to create comment and so on
+    name: Publish
+    runs-on: ubuntu-latest
+    needs: [need-publish, build-rust-binding, build-rust-wasm]
+    if: needs.need-publish.outputs.ABORT != 'true'
+    env:
+      CURRENT_VERSION: ''
+      PUBLISH_PARAMS: ''
+    steps:
+      # Setup
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3.0.0
         with:
-          node-version: 16
-          registry-url: 'https://registry.npmjs.org'
+          version: 9
+      - name: Setup Node 18
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: 'pnpm'
+          registry-url: 'https://registry.npmjs.org' # Don't touch!
       - name: Git Identity
         run: |
           git config --global user.name 'github-actions[bot]'
@@ -42,41 +113,30 @@ jobs:
       - name: Get commit message
         run: |
           COMMIT_MESSAGE=$(git log --format=%s -n 1)
-          echo "commitmsg=${COMMIT_MESSAGE}" >> $GITHUB_ENV
-      - name: Show commit message
-        run : echo "$commitmsg"
+          echo "COMMIT_MESSAGE=${COMMIT_MESSAGE}" >> $GITHUB_ENV
 
-      # ------------------ If commit message not satisfied, skip -------------
+      # ------------------ If event is push -------------
 
-      # Get & check npm publish dist-tag when event is push
-      - name: Get dist tag
-        if: startsWith( env.commitmsg , 'chore(release):' ) && github.event_name == 'push' && contains( env.commitmsg , '--tag=' )
+      # Get & check npm publish
+      - name: Get publish params
+        if: github.event_name == 'push'
         run: |
-          TEMP=`echo $commitmsg | grep -oP "\-\-tag=(\w+)"`
-          DIST_TAG=`echo ${TEMP:6}`
-          echo "disttag=${DIST_TAG}" >> $GITHUB_ENV
-      - name: Show dist tag
-        if: startsWith( env.commitmsg , 'chore(release):' ) && github.event_name == 'push' && contains( env.commitmsg , '--tag=' )
-        run : echo "$disttag"
-      - name: Check dist tag
-        if: startsWith( env.commitmsg , 'chore(release):' ) && github.event_name == 'push' && !env.disttag
-        run: |
-          echo "Publish by pushing must provide parameter named tag, just like: chore(release): publish 1.0 --tag=beta"
-          exit 1
+          PUBLISH_PARAMS=`echo $COMMIT_MESSAGE | grep -oE "^chore\(release\): publish \S*\s(.*)" | cut -d " " -f 4-`
+          echo "PUBLISH_PARAMS=${PUBLISH_PARAMS}" >> $GITHUB_ENV
 
-      # ------------------ If event is push but there is no dist tag, exit -------------
+      - name: Show publish params
+        if: github.event_name == 'push'
+        run: echo "Publish pushing provide parameter [$PUBLISH_PARAMS]."
 
       # Define ${CURRENT_VERSION}
       - name: Set Current Version
-        if: startsWith( env.commitmsg , 'chore(release):' )
         shell: bash -ex {0}
         run: |
-          CURRENT_VERSION=$(node -p 'require("./lerna.json").version')
+          CURRENT_VERSION=$(node -p 'require("./package.json").version')
           echo "CURRENT_VERSION=${CURRENT_VERSION}" >> $GITHUB_ENV
 
       # Check git tag
       - name: Tag Check
-        if: startsWith( env.commitmsg , 'chore(release):' )
         id: tag_check
         shell: bash -ex {0}
         run: |
@@ -93,28 +153,40 @@ jobs:
 
       # ------------------ If git tag already exists, skip -------------
 
+      - name: Git tag verification
+        if: steps.tag_check.outputs.exists_tag == false
+        uses: andymckay/cancel-action@0.3
+
       # Bootstrap project
-      - name: install
-        if: startsWith( env.commitmsg , 'chore(release):' ) && steps.tag_check.outputs.exists_tag == 'false'
-        run: yarn
-      - name: bootstrap
-        if: startsWith( env.commitmsg , 'chore(release):' ) && steps.tag_check.outputs.exists_tag == 'false'
-        run: yarn run bootstrap:lerna
+      - name: Install dependencies
+        run: pnpm -r install --frozen-lockfile
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: crates/native_binding/artifacts
+      - name: Move artifacts
+        run: pnpm artifacts
       - name: build
-        if: startsWith( env.commitmsg , 'chore(release):' ) && steps.tag_check.outputs.exists_tag == 'false'
-        run: yarn build
+        run: pnpm build
+      - name: List Packages
+        run: |-
+          echo "[Debug] Listing ./crates/native_binding/artifacts"
+          ls -R ./crates/native_binding/artifacts
+          echo "[Debug] Listing ./npm"
+          ls -R ./npm
+          echo "[Debug] Listing ./packages/taro-helper/swc"
+          ls -R ./packages/taro-helper/swc
+        shell: bash
 
       # Git stash
       - name: Drop current changes
-        if: startsWith( env.commitmsg , 'chore(release):' ) && steps.tag_check.outputs.exists_tag == 'false'
         run: |
           git add .
           git stash
 
       # Create git tag
       - name: Create Git Tag
-        if: startsWith( env.commitmsg , 'chore(release):' ) && steps.tag_check.outputs.exists_tag == 'false'
-        uses: azu/action-package-version-to-git-tag@v1
+        uses: azu/action-package-version-to-git-tag@v2
         with:
           version: ${{ env.CURRENT_VERSION }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
@@ -122,16 +194,14 @@ jobs:
           git_commit_sha: ${{ github.sha }}
           git_tag_prefix: "v"
 
-      # ------------------ Before publish -------------
+      # ------------------ publish -------------
 
-      # Publish
       - name: Publish
-        if: startsWith( env.commitmsg , 'chore(release):' ) && steps.tag_check.outputs.exists_tag == 'false'
         run: |
           if [ '${{ github.event_name }}' == 'pull_request' ] ; then
-            yarn lerna publish from-package --yes
+            pnpm publish --registry=https://registry.npmjs.org/ --publish-branch=${{ github.ref_name }} -r
           elif [ '${{ github.event_name }}' == 'push' ] ; then
-            yarn lerna publish from-package --dist-tag ${{ env.disttag }} --yes
+            pnpm publish --registry=https://registry.npmjs.org/ --publish-branch=${{ github.ref_name }} -r ${{ env.PUBLISH_PARAMS }}
           fi
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -139,10 +209,10 @@ jobs:
 
       # ------------------ After publish -------------
 
-      # Create relase when event is PR
+      # Create release when event is PR
       - name: Create Release
         id: create_release
-        if: startsWith( env.commitmsg , 'chore(release):' ) && steps.tag_check.outputs.exists_tag == 'false' && github.event.pull_request.merged == true
+        if: github.event.pull_request.merged == true
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -156,12 +226,12 @@ jobs:
           prerelease: false
 
       # Create PR page comment when event is PR
-      - uses: actions/github-script@0.8.0
-        if: startsWith( env.commitmsg , 'chore(release):' ) && steps.tag_check.outputs.exists_tag == 'false' && github.event.pull_request.merged == true
+      - uses: actions/github-script@v6
+        if: github.event.pull_request.merged == true
         with:
           github-token: ${{secrets.GITHUB_TOKEN}}
           script: |
-            github.issues.createComment({
+            github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
