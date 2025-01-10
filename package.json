@@ -79,7 +79,7 @@
     "@babel/core": "^7.24.4",
     "@babel/preset-env": "^7.24.4",
     "@babel/runtime": "^7.24.4",
-    "@commitlint/cli": "^17.6.6",
+    "@commitlint/cli": "^19.6.1",
     "@commitlint/config-conventional": "^17.6.6",
     "@rollup/plugin-alias": "^5.1.0",
     "@rollup/plugin-babel": "^6.0.4",
